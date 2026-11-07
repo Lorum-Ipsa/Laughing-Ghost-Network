@@ -1,0 +1,35 @@
+name: Feature proposal
+description: Suggest an improvement to LGN
+title: "[Feature] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem to solve
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed user experience
+    validations:
+      required: true
+  - type: textarea
+    id: criteria
+    attributes:
+      label: Acceptance criteria
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Ghost identities and accounts
+        - Community and discussions
+        - Research and learning
+        - Moderation and administration
+        - Accessibility and design
+        - Platform engineering
+        - Other
