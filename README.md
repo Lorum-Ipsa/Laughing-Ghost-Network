@@ -4,10 +4,12 @@
 
 LGN is intended to help practitioners share knowledge, learn collaboratively, discuss security research, and contribute under pseudonymous community identities ("ghosts"). The project is being separated from Hostinger Horizons so it can be maintained and reviewed collaboratively.
 
-> **Status: migration preparation.** This repository currently contains governance and migration tooling, **not yet the deployable LGN application**. The existing Horizons site remains separate. Do not deploy this repository as a replacement until the migration acceptance checks are satisfied.
+> **Status: application imported on [draft PR #3](https://github.com/Lorum-Ipsa/Laughing-Ghost-Network/pull/3), but not production-ready.** React build, TypeScript checks, fresh PocketBase migrations, and public-homepage smoke testing pass in CI. Login, role authorization, and production hosting remain unverified. Keep Horizons live until a separately approved cutover.
 
 ## Project structure
 
+- [Private GitHub Codespaces preview](docs/codespaces-preview.md)
+- [Local development setup](docs/development-local.md)
 - [Development guidance](docs/development.md)
 - [Current export architecture](docs/architecture/current-export.md)
 - [Horizons migration plan](docs/migration/horizons-to-github.md)
