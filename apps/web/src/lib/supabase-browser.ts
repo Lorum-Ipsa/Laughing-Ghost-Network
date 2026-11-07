@@ -13,8 +13,9 @@ let singleton: SupabaseClient<Database> | null = null;
 export function supabaseBrowser(): SupabaseClient<Database> {
   if (typeof window === 'undefined') throw new Error('Supabase Auth must run in a browser.');
   const url = import.meta.env.VITE_LGN_SUPABASE_URL || (import.meta.env.DEV ? developmentUrl : '');
-  const key = import.meta.env.VITE_LGN_SUPABASE_PUBLISHABLE_KEY ||
-    (import.meta.env.DEV ? developmentPublishableKey : '');
+  const configuredKey = import.meta.env.VITE_LGN_SUPABASE_PUBLISHABLE_KEY || '';
+  const key = configuredKey.startsWith('sb_publishable_') || configuredKey.startsWith('eyJ')
+    ? configuredKey : (import.meta.env.DEV ? developmentPublishableKey : '');
   if (!url || !key) throw new Error('Supabase Auth has not been configured for this deployment.');
   if (!url.startsWith('https://') && !url.startsWith('http://localhost:')) {
     throw new Error('Supabase must use HTTPS.');
