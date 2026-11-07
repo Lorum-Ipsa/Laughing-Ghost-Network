@@ -5,10 +5,19 @@ import { defineConfig } from 'vite';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const pocketbaseTarget = process.env.POCKETBASE_URL || 'http://127.0.0.1:8090';
+// GitHub Codespaces forwards private preview traffic through the Codespace's
+// app.github.dev hostname. Bind to the container network and explicitly allow
+// that hostname, without allowing arbitrary Internet Host headers.
+const codespaceName = process.env.CODESPACE_NAME?.trim();
+const runningInCodespaces = process.env.CODESPACES === 'true' || Boolean(codespaceName);
 
 export default defineConfig({
   server: {
-    host: process.env.CODESPACES === 'true' ? '0.0.0.0' : '127.0.0.1',
+    host: runningInCodespaces ? '0.0.0.0' : '127.0.0.1',
+    allowedHosts: runningInCodespaces
+      ? (codespaceName ? [`${codespaceName}-3000.app.github.dev`] : ['.app.github.dev'])
+      : undefined,
+    strictPort: true,
     port: 3000,
     proxy: {
       '/hcgi/platform': {

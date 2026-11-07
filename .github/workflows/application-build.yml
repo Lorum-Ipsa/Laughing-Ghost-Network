@@ -93,6 +93,9 @@ jobs:
         run: bash .devcontainer/setup.sh
       - name: Start app and check browser-facing endpoints
         run: |
+          # Reproduce the GitHub Codespaces host/port-forwarding environment.
+          export CODESPACES=true
+          export CODESPACE_NAME=lgn-ci-preview
           bash .devcontainer/start.sh > "$RUNNER_TEMP/lgn-preview.log" 2>&1 &
           app_pid=$!
           trap 'kill "$app_pid" 2>/dev/null || true' EXIT
@@ -115,6 +118,11 @@ jobs:
           cat "$RUNNER_TEMP/health.json"
           curl --fail --silent http://127.0.0.1:3000/ --output "$RUNNER_TEMP/home.html"
           grep -qi 'Laughing Ghost' "$RUNNER_TEMP/home.html"
+          # Codespaces proxy forwards with an app.github.dev Host header.
+          curl --fail --silent --show-error \
+            -H 'Host: lgn-ci-preview-3000.app.github.dev' \
+            http://127.0.0.1:3000/ --output "$RUNNER_TEMP/codespaces-home.html"
+          grep -qi 'Laughing Ghost' "$RUNNER_TEMP/codespaces-home.html"
           # The real visitor auth pages must all respond successfully without
           # using the optional /supabase-lab experiment.
           for page in join login verify-email reset-password ghost-space; do
