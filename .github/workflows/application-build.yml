@@ -42,3 +42,40 @@ jobs:
         run: bun run build
       - name: Typecheck
         run: bun run typecheck
+
+  pocketbase-migrations:
+    name: Fresh PocketBase database migrations
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/pocketbase
+    env:
+      PB_ENCRYPTION_KEY: ci-disposable-key-only-not-for-production
+      LGN_APP_URL: http://127.0.0.1:3000
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install export-matched PocketBase 0.40.4
+        run: |
+          curl --fail --location --show-error --silent --retry 3 \
+            https://github.com/pocketbase/pocketbase/releases/download/v0.40.4/pocketbase_0.40.4_linux_amd64.zip \
+            --output pocketbase-ci.zip
+          unzip -oq pocketbase-ci.zip pocketbase
+          chmod +x ./pocketbase
+          ./pocketbase --version
+      - name: Apply all migrations to a clean, disposable database
+        run: |
+          ./pocketbase migrate up \
+            --dir=./pb_data \
+            --migrationsDir=./pb_migrations \
+            --hooksDir=./pb_hooks \
+            --encryptionEnv=PB_ENCRYPTION_KEY
+      - name: Verify no superuser was silently created
+        run: |
+          python3 - <<'PY'
+          import sqlite3
+          con = sqlite3.connect('pb_data/data.db')
+          count = con.execute('SELECT COUNT(*) FROM "_superusers"').fetchone()[0]
+          assert count == 0, f'Unexpected migrated superuser count: {count}'
+          print('Zero auto-provisioned superusers.')
+          PY
