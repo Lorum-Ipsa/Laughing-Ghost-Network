@@ -1,40 +1,44 @@
 # Laughing Ghost Network (LGN)
 
-**A cybersecurity community platform by Lorum Ipsa.**
+**A pseudonymous cybersecurity community platform by Lorum Ipsa.**
 
-LGN is intended for pseudonymous ("ghost") practitioner profiles, shared security research, collaborative learning, and responsible community contributions.
+LGN emphasizes responsible publication, demonstrated work, useful collaboration, and persistent Ghost identities—not popularity or entry barriers.
 
-> **Development status:** The original Horizons application is imported on [draft PR #3](https://github.com/Lorum-Ipsa/Laughing-Ghost-Network/pull/3). The normal **Join → Verify Email → Sign In → Ghost Space** route now uses the separate **Supabase development project**. Build, typecheck, PocketBase migrations, and basic preview smoke tests pass; live email delivery and registration were confirmed by the owner; 23 rollback-only SQL authorization checks passed. Browser multi-account security and production deployment still require QA. **Do not merge or cut over the live website until approved.**
+> **Development status:** The original Horizons app is imported on [draft PR #3](https://github.com/Lorum-Ipsa/Laughing-Ghost-Network/pull/3). The **Supabase development backend** now supports normal registration, verification, sign-in, profile creation, rich profile editing, public Ghost discovery, contribution drafts and submission, and protected version history. The owner verified the initial registration/auth flow; **new profile and contribution UIs still require live browser acceptance**. Build, typecheck and private preview smoke checks pass. **Do not merge or cut over the live site without approval.**
 
 ## Start here
 
-- [Normal registration and email verification test](docs/supabase/normal-registration-test.md)
-- [Supabase backend architecture and migration status](docs/supabase/README.md)
-- [Supabase security acceptance results (23 checks)](docs/supabase/security-acceptance.md)
-- [Private GitHub Codespaces preview](docs/codespaces-preview.md)
-- [Local development setup](docs/development-local.md)
+- [Run the app in desktop VS Code + GitHub Codespaces](docs/codespaces-preview.md)
+- [Test the upgraded profile and contributions](docs/supabase/profile-contributions-acceptance.md)
+- [Normal registration and verification test](docs/supabase/normal-registration-test.md)
+- [Supabase architecture and database migration status](docs/supabase/README.md)
+- [Identity security: 23 rollback-only checks](docs/supabase/security-acceptance.md)
+- [Contributions security: 14 rollback-only checks](docs/supabase/contributions-rls-acceptance.sql)
 - [Development guidance](docs/development.md)
-- [Current export architecture (historical PocketBase model)](docs/architecture/current-export.md)
-- [Horizons migration plan](docs/migration/horizons-to-github.md)
+- [Historical Horizons export architecture](docs/architecture/current-export.md)
 - [Delivery roadmap](docs/roadmap.md)
 - [Contribution rules](CONTRIBUTING.md)
 - [Security reporting](SECURITY.md)
-- [Agent instructions](AGENTS.md)
+- [AI agent instructions](AGENTS.md)
 
 ## Architecture in transition
 
-The source is a Bun-workspace monorepo with React / React Router / TypeScript / Tailwind in `apps/web`. The **normal account frontend** now uses **Supabase Auth + PostgreSQL RLS** in `lgn-development`, with a public publishable key for the Codespaces **development** environment only. Production deployments must supply environment-specific public Supabase settings.
+The source is a Bun-workspace monorepo with React/React Router/TypeScript/Tailwind in `apps/web`.
 
-The previous **PocketBase backend** remains under `apps/pocketbase` for reference/rollback and for public material that has not yet been migrated. Ghost contributions, projects, Table Talks, moderation, notifications, avatar storage, and public directory integration **have not** been fully migrated. The new Ghost Space tells users which sections are unavailable; it does not claim legacy features work on new Supabase accounts.
+**Supabase Auth and PostgreSQL RLS** back the normal visitor account flow and Ghost Space. Public profiles are explicitly selected from Supabase for the directory and the individual Ghost page. The new `ghost_contributions` table supports owner-only drafts, submission/withdrawal, archiving and immutable revision snapshots. User-editable roles cannot grant privileges, and only future reviewed moderator actions can publish.
 
-Browser-only Supabase Auth is suitable for the isolated development preview but **not the final SSR security architecture**. Before production, implement reviewed cookie-based SSR/PKCE session handling, then test authorization, deployment, migrations, and SMTP delivery.
+The old **PocketBase backend** remains under `apps/pocketbase` as a migration/rollback reference and currently supplies some legacy public content. Existing PocketBase data was **not imported**. The public directory can display both Supabase and legacy Ghost profiles.
+
+**Still missing:** contribution review/publishing by staff; validated public published-work links; member file uploads and avatar storage; full private visibility settings and profile-hidden values; projects, Table Talks, notifications, moderation operations; production deployment. Do not infer completeness from the appearance of a navigation item.
+
+The current browser-only Supabase Auth implementation is for **development**. Production requires reviewed cookie-backed SSR/PKCE sessions, hardened caching/redirects, production secrets management, versioned migration baseline and staging tests. Public publishable browser keys are not secret, but private keys must never enter the client or the repository.
 
 ## Development model
 
-1. Open an issue with a focused outcome.
-2. Develop on a branch rather than directly on `main`.
-3. Open a draft pull request describing risks and evidence of testing.
-4. Obtain maintainer review before merging.
-5. Promote approved builds through staging before production.
+1. Work on a branch with a focused issue and documented constraints.
+2. Test migrations against the development environment and commit their exact source.
+3. Run SQL authorization checks and GitHub CI on each substantial change.
+4. Review the draft pull request before merge or deployment.
+5. Cut over Horizons only after formal acceptance of a separate staging build.
 
-LGN is a commercial Lorum Ipsa project. Public repository visibility does not imply permission to reuse materials. No open-source license has been selected yet.
+LGN is a commercial Lorum Ipsa project. Public repository visibility does not itself grant permission to reuse code or materials. No open-source license has been selected.

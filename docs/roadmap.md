@@ -1,22 +1,22 @@
-# LGN implementation roadmap
+# LGN implementation roadmap — November 7, 2026
 
-## 0. Foundation — underway
-Ownership under Lorum Ipsa; public repository with review controls; docs, CI and migration plan. **Exit:** maintainer-approved foundation PR.
+## 0. Foundation and export
+**Source controlled; draft PR #3 active.** Code review, CI, base documentation, independent VS Code Codespaces preview and no automatic privileged PocketBase creation. Formal PR approval remains outstanding.
 
-## 1. Horizons source import
-Screen and import current React + PocketBase source, preserving application logic and providing a reproducible manifest. **Exit:** source-controlled candidate with no privileged auto-bootstrapping and no secrets/data.
+## 1. Supabase identity and authentication
+**Development flow operating.** Normal registration, email verification, login, reset-password and Ghost Space use Supabase. Owner verified email delivery and the registration flow. 23 rollback-only database authorization checks pass. Still requires multi-user browser/API testing and SSR/PKCE production hardening.
 
-## 2. Independent local environment
-Working frontend, backend, migrations, authentication and routing outside Horizons. **Exit:** verified clean install/build with synthetic accounts.
+## 2. Ghost public identity
+**Implemented on feature branch; live user acceptance pending.** Expanded profile sections, specialties/skills/tools, languages, location, availability, avatar templates, external links, public profile route and directory lookup. Remaining: custom upload security, field-specific private visibility, verified external account ownership, production serving.
 
-## 3. Staging preview and hardening
-PR preview workflow, staged PocketBase, role/permission tests, privacy and abuse-prevention review. **Exit:** meaningful end-to-end review of real workflows, not just static screenshots.
+## 3. Contribution publishing lifecycle
+**Author workspace implemented; moderator workflow pending.** Draft/edit/submit/withdraw/archive/restore, immutable version history, RLS protections and 14 SQL regression assertions. Next: staff review feedback and moderated publish/reject/revise actions, public work rendering, attachment security, version release workflow.
 
-## 4. Member experience
-Iterate ghost profiles, discussions, Table Talks, research, Arsenal, projects and notifications using issue-led delivery.
+## 4. Network functionality
+Migrate projects/tasks, Table Talks, moderation queues, community collaboration and notifications from historical PocketBase schemas. Preserve accessible, evidence-centered interfaces and published-original-language fidelity. Each requires its own reviewed authorization and audit model.
 
-## 5. Commercial readiness
-Determine product tiers, moderation operations, terms/privacy, support, payment provider, and Lorum Ipsa financial/commercial governance before monetization is enabled.
+## 5. Staging, operational security and continuity
+Resolve Supabase CLI migration baseline; add disposable end-to-end tests, hardened cookie/PKCE SSR sessions, reliable deployed staging and rollback, two-user permissions, rate limits, privacy notices and observed moderation behavior.
 
-## 6. Optional backend modernization
-Evaluate Supabase against PocketBase using measured constraints, cost, migration effort, security policies and rollback. **Not a prerequisite** to stage 1–3.
+## 6. Commercial launch governance
+Decide terms, paid tiers if any, support operations, abuse handling, Lorum Ipsa finances and moderation staffing. **Do not monetize or cut over the live Horizons site before staging is accepted.**
