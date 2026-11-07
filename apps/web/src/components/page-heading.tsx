@@ -1,0 +1,3 @@
+import { Link } from 'react-router';
+import { ArrowUpRight } from 'lucide-react';
+export function PageHeading({ title, eyebrow, description, subtitle, number, action }: { title: string; eyebrow: string; description: string; subtitle?: string; number: string; action?: { to: string; label: string } }) { return <section className="page-heading rail"><div className="eyebrow"><span className="tiny-dot"/> {eyebrow.toUpperCase()} <span className="section-index">/{number}</span></div><div className="heading-line"><h1>{title}<span className="accent-period">.</span></h1>{action && <Link className="button button-light" to={action.to}>{action.label}<ArrowUpRight size={17}/></Link>}</div><p>{description}</p>{subtitle && <p className="page-subtitle">{subtitle}</p>}</section>; }

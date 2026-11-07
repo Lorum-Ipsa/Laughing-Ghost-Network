@@ -1,0 +1,29 @@
+import { type RouteConfig, index, route } from '@react-router/dev/routes';
+
+export default [
+	index('routes/home.tsx'),
+    route('ghosts', 'routes/ghosts.tsx'),
+    route('ghosts/:handle', 'routes/ghost-profile.tsx'),
+    route('research', 'routes/research.tsx'),
+    route('arsenal', 'routes/arsenal.tsx'),
+    route('projects', 'routes/projects.tsx'),
+    route('table-talks', 'routes/table-talks.tsx'),
+    route('work/:id', 'routes/work-detail.tsx'),
+    route('about', 'routes/about.tsx'),
+    route('join', 'routes/join.tsx'),
+    route('code', 'routes/code.tsx'),
+    route('contact', 'routes/contact.tsx'),
+    route('login', 'routes/login.tsx'),
+    route('verify-email', 'routes/verify-email.tsx'),
+	route('ghost-space', 'routes/ghost-space.tsx'),
+	route('admin', 'routes/admin.tsx'),
+    route('account', 'routes/account.tsx'),
+    route('contribute', 'routes/contribute.tsx'),
+    route('llms.txt', 'routes/llms.txt.ts'),
+    route('*', 'routes/not-found.tsx'),
+
+	route('sitemap.xml', 'routes/sitemap.xml.ts'),
+	route('robots.txt', 'routes/robots.txt.ts'),
+	route('api/health', 'routes/api.health.ts'),
+	route('api/*', 'routes/api.$.ts'),
+] satisfies RouteConfig;
