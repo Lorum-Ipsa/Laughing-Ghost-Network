@@ -16,6 +16,7 @@ export default [
     route('login', 'routes/login.tsx'),
     route('supabase-lab', 'routes/supabase-lab.tsx'),
     route('verify-email', 'routes/verify-email.tsx'),
+    route('reset-password', 'routes/reset-password.tsx'),
 	route('ghost-space', 'routes/ghost-space.tsx'),
 	route('admin', 'routes/admin.tsx'),
     route('account', 'routes/account.tsx'),
