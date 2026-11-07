@@ -79,3 +79,39 @@ jobs:
           assert count == 0, f'Unexpected migrated superuser count: {count}'
           print('Zero auto-provisioned superusers.')
           PY
+
+  codespaces-preview-smoke:
+    name: Public-page preview smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Prepare independent development stack
+        run: bash .devcontainer/setup.sh
+      - name: Start app and check browser-facing endpoints
+        run: |
+          bash .devcontainer/start.sh > "$RUNNER_TEMP/lgn-preview.log" 2>&1 &
+          app_pid=$!
+          trap 'kill "$app_pid" 2>/dev/null || true' EXIT
+          ready=false
+          for attempt in $(seq 1 50); do
+            if curl --fail --silent http://127.0.0.1:3000/api/health > "$RUNNER_TEMP/health.json"; then
+              ready=true
+              break
+            fi
+            if ! kill -0 "$app_pid" 2>/dev/null; then
+              echo "LGN preview process stopped."
+              exit 1
+            fi
+            sleep 1
+          done
+          if [ "$ready" != true ]; then
+            echo "LGN preview did not become healthy."
+            exit 1
+          fi
+          cat "$RUNNER_TEMP/health.json"
+          curl --fail --silent http://127.0.0.1:3000/ --output "$RUNNER_TEMP/home.html"
+          grep -qi 'Laughing Ghost' "$RUNNER_TEMP/home.html"

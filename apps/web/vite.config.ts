@@ -8,7 +8,7 @@ const pocketbaseTarget = process.env.POCKETBASE_URL || 'http://127.0.0.1:8090';
 
 export default defineConfig({
   server: {
-    host: '127.0.0.1',
+    host: process.env.CODESPACES === 'true' ? '0.0.0.0' : '127.0.0.1',
     port: 3000,
     proxy: {
       '/hcgi/platform': {
