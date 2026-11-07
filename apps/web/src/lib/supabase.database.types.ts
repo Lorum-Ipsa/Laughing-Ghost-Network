@@ -1,5 +1,5 @@
-// GENERATED from lgn-development Supabase project on 2026-11-07.
-// Regenerate after schema migrations; do not edit manually.
+// GENERATED from lgn-development Supabase project on 2026-11-07 after profile/contributions migration.
+// Regenerate after schema changes; do not edit manually.
 
 export type Json =
   | string
@@ -17,6 +17,130 @@ export type Database = {
   }
   public: {
     Tables: {
+      ghost_contribution_revisions: {
+        Row: {
+          body: string
+          code: string
+          contribution_id: string
+          created_at: string
+          id: string
+          owner_id: string
+          reason: string
+          status: string
+          summary: string
+          title: string
+          version: number
+        }
+        Insert: {
+          body: string
+          code: string
+          contribution_id: string
+          created_at?: string
+          id?: string
+          owner_id: string
+          reason: string
+          status: string
+          summary: string
+          title: string
+          version: number
+        }
+        Update: {
+          body?: string
+          code?: string
+          contribution_id?: string
+          created_at?: string
+          id?: string
+          owner_id?: string
+          reason?: string
+          status?: string
+          summary?: string
+          title?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ghost_contribution_revisions_contribution_id_fkey"
+            columns: ["contribution_id"]
+            isOneToOne: false
+            referencedRelation: "ghost_contributions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ghost_contributions: {
+        Row: {
+          body: string
+          code: string
+          created_at: string
+          deleted_at: string | null
+          domain: string
+          id: string
+          kind: string
+          language: string
+          owner_id: string
+          profile_id: string
+          published_at: string | null
+          source_url: string
+          status: string
+          submitted_at: string | null
+          summary: string
+          tags: string
+          title: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          body?: string
+          code?: string
+          created_at?: string
+          deleted_at?: string | null
+          domain?: string
+          id?: string
+          kind?: string
+          language?: string
+          owner_id: string
+          profile_id: string
+          published_at?: string | null
+          source_url?: string
+          status?: string
+          submitted_at?: string | null
+          summary?: string
+          tags?: string
+          title?: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          body?: string
+          code?: string
+          created_at?: string
+          deleted_at?: string | null
+          domain?: string
+          id?: string
+          kind?: string
+          language?: string
+          owner_id?: string
+          profile_id?: string
+          published_at?: string | null
+          source_url?: string
+          status?: string
+          submitted_at?: string | null
+          summary?: string
+          tags?: string
+          title?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ghost_contributions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "ghost_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ghost_profile_links: {
         Row: {
           created_at: string
@@ -90,51 +214,96 @@ export type Database = {
       }
       ghost_profiles: {
         Row: {
+          available_for_work: boolean
+          avatar_template: string
           bio: string
+          collaboration_interests: string
           created_at: string
           deleted_at: string | null
           developing_specialties: string
           display_name: string
+          external_links: string
+          featured_work: string
           handle: string
           id: string
+          industry: string
+          language: string
+          languages: string
           location_country: string
           location_disclosure: string
+          open_to_collaboration: boolean
+          open_to_mentorship: boolean
+          open_to_research: boolean
+          open_to_speaking: boolean
           owner_id: string
+          platform: string
           portfolio: string
           pronouns: string
+          skills: string
           specialties: string
+          tools: string
           updated_at: string
         }
         Insert: {
+          available_for_work?: boolean
+          avatar_template?: string
           bio?: string
+          collaboration_interests?: string
           created_at?: string
           deleted_at?: string | null
           developing_specialties?: string
           display_name?: string
+          external_links?: string
+          featured_work?: string
           handle: string
           id?: string
+          industry?: string
+          language?: string
+          languages?: string
           location_country?: string
           location_disclosure?: string
+          open_to_collaboration?: boolean
+          open_to_mentorship?: boolean
+          open_to_research?: boolean
+          open_to_speaking?: boolean
           owner_id: string
+          platform?: string
           portfolio?: string
           pronouns?: string
+          skills?: string
           specialties?: string
+          tools?: string
           updated_at?: string
         }
         Update: {
+          available_for_work?: boolean
+          avatar_template?: string
           bio?: string
+          collaboration_interests?: string
           created_at?: string
           deleted_at?: string | null
           developing_specialties?: string
           display_name?: string
+          external_links?: string
+          featured_work?: string
           handle?: string
           id?: string
+          industry?: string
+          language?: string
+          languages?: string
           location_country?: string
           location_disclosure?: string
+          open_to_collaboration?: boolean
+          open_to_mentorship?: boolean
+          open_to_research?: boolean
+          open_to_speaking?: boolean
           owner_id?: string
+          platform?: string
           portfolio?: string
           pronouns?: string
+          skills?: string
           specialties?: string
+          tools?: string
           updated_at?: string
         }
         Relationships: []

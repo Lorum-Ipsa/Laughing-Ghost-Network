@@ -14,9 +14,24 @@ export type GhostIdentity = {
   location_country: string;
   created_at: string;
   updated_at: string;
+  skills: string;
+  tools: string;
+  platform: string;
+  industry: string;
+  languages: string;
+  language: string;
+  available_for_work: boolean;
+  open_to_collaboration: boolean;
+  open_to_research: boolean;
+  open_to_mentorship: boolean;
+  open_to_speaking: boolean;
+  collaboration_interests: string;
+  external_links: string;
+  avatar_template: string;
+  featured_work: string;
 };
 
-const FIELDS = 'id,handle,display_name,pronouns,bio,specialties,developing_specialties,portfolio,location_disclosure,location_country,created_at,updated_at' as const;
+const FIELDS = 'id,handle,display_name,pronouns,bio,specialties,developing_specialties,portfolio,location_disclosure,location_country,skills,tools,platform,industry,languages,language,available_for_work,open_to_collaboration,open_to_research,open_to_mentorship,open_to_speaking,collaboration_interests,external_links,avatar_template,featured_work,created_at,updated_at' as const;
 export const HANDLE_PATTERN = /^[a-z0-9_/-]{3,40}$/;
 
 export function signupDetails(user: User) {
