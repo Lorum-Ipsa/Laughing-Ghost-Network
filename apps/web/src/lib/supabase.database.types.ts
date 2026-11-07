@@ -1,6 +1,5 @@
-// GENERATED from the LGN development Supabase project (2026-11-07).
-// Re-generate after versioned migrations; do not edit by hand.
-// This types file does not switch the existing PocketBase frontend.
+// GENERATED from lgn-development Supabase project on 2026-11-07.
+// Regenerate after schema migrations; do not edit manually.
 
 export type Json =
   | string
@@ -18,6 +17,32 @@ export type Database = {
   }
   public: {
     Tables: {
+      ghost_profile_links: {
+        Row: {
+          created_at: string
+          owner_id: string
+          profile_id: string
+        }
+        Insert: {
+          created_at?: string
+          owner_id: string
+          profile_id: string
+        }
+        Update: {
+          created_at?: string
+          owner_id?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ghost_profile_links_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "ghost_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ghost_profile_preferences: {
         Row: {
           allow_recruiter_contact: boolean
