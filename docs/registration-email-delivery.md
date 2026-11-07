@@ -1,26 +1,13 @@
-# Registration email delivery in the independent LGN preview
+# LGN registration email delivery — active development path
 
-## The current implementation
+## Supabase is the normal identity backend
 
-The ordinary **Join the Network** page (`/join`) still uses PocketBase in the separate Codespaces development environment. It does **not** write to `lgn-development` in Supabase. Use the opt-in [Supabase identity lab](supabase/identity-test-plan.md) for Supabase Auth testing.
+The regular \`/join\`, \`/login\`, \`/verify-email\`, \`/reset-password\`, and \`/ghost-space\` paths now use Supabase in the GitHub development branch. The old PocketBase registration flow is no longer the normal route. Historical PocketBase data remains separate and was **not migrated**.
 
-A successful PocketBase account creation is independent of outbound email delivery. The current Codespaces installer does **not** configure an SMTP provider. The migrated PocketBase settings also originated in a Horizons environment; email link destinations and sender settings must be reviewed for any standalone use. This can leave new development accounts unverified.
+The Hostinger mail account is \`admin@laughingghost.net\`. Existing aliases include \`no-reply@laughingghost.net\` and \`support@laughingghost.net\`, all delivering to the administrator mailbox. Custom SMTP was entered into the LGN Supabase development project by the owner; **delivery is not verified until a real test email arrives**.
 
-## What was corrected
+**For a visitor-equivalent test**, follow the [normal registration guide](supabase/normal-registration-test.md). The confirmation redirect should return to \`/verify-email\`; password recovery goes to \`/reset-password\`.
 
-- The verification page now reads and displays the email-request failure passed from registration instead of silently discarding it.
-- The page no longer asserts that a message was definitely delivered.
-- The sign-in, reset-email, and dashboard resend messages acknowledge that an accepted API request is not proof of delivery.
-- An unverified Ghost may still access their dashboard for limited onboarding, as the existing LGN UI intends. Whether **all** privileged server-side operations enforce `verified=true` must be tested; do not equate a dashboard redirect with permission enforcement.
+If emails do not arrive, verify Supabase SMTP sender settings and Hostinger alias sender authorization and inspect Supabase Auth logs. Do not embed any mailbox passwords or SMTP credentials in the code or browser key settings.
 
-## Recommended direction
-
-Because LGN is migrating to Supabase, do **not** invest in a production PocketBase mail service solely to support this temporary preview unless a legacy-backend test specifically requires it.
-
-Instead:
-1. Validate Supabase Auth signup and confirmation in the isolated `/supabase-lab` page.
-2. Configure a suitable SMTP provider in the **Supabase development project** if using arbitrary test inboxes. Supabase's built-in email sender is limited; see [SMTP documentation](https://supabase.com/docs/guides/auth/auth-smtp).
-3. Migrate `/join`, `/login`, verification and recovery as one coherent **Supabase Auth** flow with RLS and an SSR-compatible session design.
-4. Verify all write permissions for unverified users before switching the default route. Keep PocketBase and the existing website preview as rollback until parity is established.
-
-Do not embed SMTP credentials, password reset tokens, or secret API keys in GitHub or browser-exposed environment variables.
+Protected member profile insertion is gated on the email-confirmed Auth user in PostgreSQL, rather than a visual dashboard banner. New Supabase members cannot access unmigrated PocketBase member functions.

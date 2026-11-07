@@ -1,67 +1,53 @@
-# LGN Supabase identity foundation
+# LGN Supabase authentication and identity foundation
 
-## Live state (2026-11-07)
+## Current state — November 7, 2026
 
-- **Development project:** [`lgn-development`](https://supabase.com/dashboard/project/oatdfrnytmliunauxqyd), US East (Northern Virginia).
-- **Original app:** LGN's React/React Router UI still uses **PocketBase**. The working Codespaces preview and PR #3 are preserved.
-- **Supabase foundation:** five tables have been created, including an owner-only profile lookup table; no real users or seeded profiles.
-- **Scope:** foundation schema and an isolated development-only Supabase auth/identity test route. The main frontend still uses PocketBase. Full authentication/authorization flows have not been validated end to end.
+- **Development database:** [lgn-development](https://supabase.com/dashboard/project/oatdfrnytmliunauxqyd), US East (Virginia).
+- **Normal LGN pages:** \`/join\`, \`/login\`, \`/verify-email\`, \`/reset-password\`, \`/ghost-space\` now use Supabase.
+- **Member profile:** After confirming email and entering Ghost Space, the account claims the chosen persistent handle. Public profile fields may be edited. Profile owner ID and role table remain private.
+- **Legacy app:** PocketBase still starts in Codespaces for historical comparison and unmigrated public content, but its legacy authenticated dashboard and admin writes are **not exposed through the normal auth routes**.
+- **Functional testing:** Build, typecheck, PocketBase migration, public preview smoke, and static Supabase permission checks passed. A real SMTP registration/confirmation and two-account RLS tests are still outstanding.
 
-This directory's [SQL snapshot](identity-foundation.sql) records the DDL applied to the development database. It is **not** a generated Supabase CLI migration and must **not** be replayed against the already-initialized development project.
+**Test the normal user flow:** [Normal registration test guide](normal-registration-test.md). The old \`/supabase-lab\` experiment remains development-only and is **not needed** for normal signup.
 
-## Source-to-target mapping
+## Database
 
-| Current PocketBase concept | Supabase target | Access |
+| LGN feature | Supabase object | Access |
 | --- | --- | --- |
-| `users` credentials | Supabase `auth.users` | Managed by Supabase Auth |
-| `users.role` and `suspended` | `lgn_private.member_access` | Server-managed only; four roles: ghost/reviewer/moderator/admin |
-| `ghost_profiles` basic public identity | `public.ghost_profiles` | Public safe fields only, one profile per account |
-| Persistent `ghost_profiles.handle` | `lgn_private.reserved_handles` | Server-owned ledger; handles cannot be reused after deletion |
-| Member-specific language/visibility settings | `public.ghost_profile_preferences` | Only the authenticated account owner |
-| Secure profile self-lookup | `public.ghost_profile_links` | Each member can read only their own profile ID; the private owner ID remains hidden |
-| Ghost work / Table Talks / projects / notifications | Not yet migrated | Remain with PocketBase until separate review |
-| Avatars, verified external identities, visibility | Not yet migrated | Storage and selective disclosure require dedicated design |
+| Account identity and email confirmation | \`auth.users\` | Supabase Auth; not a public profile |
+| Roles and suspension | \`lgn_private.member_access\` | Server-managed, default \`ghost\`; not user-editable |
+| Public Ghost pseudonym and optional details | \`public.ghost_profiles\` | Public-safe columns only; RLS prevents changes by strangers |
+| Profile preferences | \`public.ghost_profile_preferences\` | Private to owner; triggered at signup |
+| Self lookup without exposing owner ID | \`public.ghost_profile_links\` | Owner-scoped lookup of profile ID only |
+| Permanent handle ledger | \`lgn_private.reserved_handles\` | Server-only, no handle reuse |
+| Contributions / projects / research / Table Talks | Not yet migrated | Legacy PocketBase only; no Supabase writes available |
+| Admin / moderation / avatar uploads | Not yet migrated | Disabled for new Supabase accounts |
 
-**Pseudonymity boundary:** `ghost_profiles.owner_id` is not readable via the browser Data API. No email or civil identity is stored in a public Ghost profile. Clients must explicitly select permitted profile fields, not `select('*')`.
+**Pseudonymity:** Browser queries never select \`ghost_profiles.owner_id\`; no private email is stored on public Ghost profiles. A \`lgn_private\` helper permits profile creation only for existing, unsuspended, **email-confirmed** Supabase users. Signup metadata cannot grant staff privileges. Handles follow \`^[a-z0-9_/-]{3,40}$\`. Default location disclosure is \`undisclosed\`.
 
-The Ghost handle follows the existing `^[a-z0-9_/-]{3,40}$` input rules, including the allowed slash. It cannot be changed by ordinary profile updates. Profile locations default to **undisclosed** and cannot contain a country unless disclosure is set to **country**.
+**Lifecycle:** Signup creates an Auth account and a default private membership, but **does not yet create a public handle**. A pending requested handle is stored in non-privileged account metadata. After confirmation and first Ghost Space access, the browser claims it via the RLS-protected insert. If another user claimed it first, Ghost Space asks for a different handle. Existing account holders can sign in normally.
 
-## Authorization rules now in effect
+## Migrations and source control
 
-- Supabase Auth generates private member membership `ghost` and owner-only preferences through a signup trigger.
-- No signup metadata can specify or upgrade the role.
-- Public users see only non-deleted Ghost profile fields.
-- Signed-in, unsuspended members may create **one** profile and update only its ordinary display fields.
-- Members cannot read another account's private preferences or a hidden `owner_id`.
-- Role changes and account suspension are not writable by the browser. We will create carefully audited admin operations separately.
-- `lgn_private` is not in the default Data API exposed schema list; the narrowly granted helper `is_active_member()` checks current DB role/suspension status.
+- [Original identity SQL snapshot](identity-foundation.sql) was applied directly to the development project. This snapshot **is not** a numbered Supabase CLI migration. Do **not** reapply it on the initialized project.
+- [Self lookup migration](ghost-profile-self-lookup.sql) is applied in remote migration history as \`20261107205249_ghost_profile_self_lookup\`.
+- \`20261107214928_require_confirmed_email_for_ghost_profile\` is applied to remote migration history; it checks live confirmation and suspension before member profile writes.
+- Generated database TypeScript definitions live in \`apps/web/src/lib/supabase.database.types.ts\`.
 
-## Verification evidence
+**Next migration task:** Pull a reviewed remote baseline into CLI-managed \`supabase/migrations\` and resolve migration-history consistency *before* deploying to staging or another project. Inspect \`supabase --version\` and \`supabase db pull --help\` for your actual CLI version; never replay snapshots on an already initialized database.
 
-Supabase confirmed all four tables exist with **RLS enabled** and no member data. Privilege checks confirmed that neither anonymous nor authenticated users can select `owner_id`, authenticated users cannot update `handle`, and they cannot read `member_access`. Supabase security advisor returned only two **informational** `rls_enabled_no_policy` findings on internal server-only tables. This is intentional: no client policies are permitted. See [Supabase security guidance](https://supabase.com/docs/guides/api/securing-your-api).
+## Operational and security limits
 
-**Still unverified:** signup trigger behavior with a disposable Auth user, positive/negative owner RLS tests, session revocation after suspension, frontend login integration, profile field parity, privileged administrator routes, avatar privacy, and the rest of the LGN schema. No live data should be imported until these pass.
+- The development Codespaces frontend has a **public publishable key** fallback, but no secret or service-role key. Production must provide \`VITE_LGN_SUPABASE_URL\` and \`VITE_LGN_SUPABASE_PUBLISHABLE_KEY\`; RLS remains the authorization boundary.
+- The current client-only authentication session uses browser storage and Supabase's implicit confirmation callback in the development preview. A final production deployment needs reviewed **SSR cookie / PKCE** handling and non-cacheable authenticated loaders before exposing member data on the server.
+- Supabase auth SMTP was configured through the owner's dashboard. This is **not proof of mail delivery**. Validate both confirmation and recovery templates and ensure the **exact Codespaces \`/verify-email\` and \`/reset-password\` callback URLs** are on the Auth redirect allowlist.
+- Supabase security advisor's two informational \`rls_enabled_no_policy\` notices concern the intentionally unexposed \`lgn_private\` tables. They have no browser policies. Reference: [Supabase RLS linter](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy).
+- Real signup-trigger and RLS behavioral tests require disposable confirmed users, including a second user and a suspended user. A successful build does not substitute for them.
+- Do not paste passwords, mail transport credentials, verification tokens, secrets, or recovery fragments in GitHub or chat.
 
-## Browser-facing identity test
+## Next development phases
 
-[View the isolated Supabase identity test plan](identity-test-plan.md). The test route is off by default, is inaccessible in production, and does not replace LGN's existing PocketBase sign-in.
-
-## Version-control next step
-
-The initial identity SQL is a **schema snapshot**, not an official CLI migration. The subsequent self-lookup was applied to the remote project as migration `20261107205249`; see [its SQL record](ghost-profile-self-lookup.sql). In Codespaces, once a supported Supabase CLI and Docker-compatible runtime are available (CLI v3 now targets local by default; remote operations need `--remote`):
-
-1. Read [Supabase's remote-to-local workflow](https://supabase.com/docs/guides/local-development/cli-workflows).
-2. Use `supabase --version`, `supabase --help`, and `supabase db pull --help` to confirm CLI v3 commands. For the hosted project, explicitly use `--remote`.
-3. Link **only** the `lgn-development` project, then capture the remote baseline with the documented `db pull` workflow. Review the generated `supabase/migrations` SQL before committing.
-4. Check migration history and diff; do not re-run this SQL snapshot on the same database.
-5. From then on create new migration files using `supabase migration new <name>` before pushing changes through reviewed PRs.
-
-## Planned incremental backend migration
-
-1. Validate Auth signup, account creation trigger, roles, owner-only preferences, and private handle reservation with disposable accounts.
-2. Introduce a Supabase adapter for the login and profile flows, leaving remaining PocketBase features operational.
-3. Implement administrator provisioning, membership suspension and moderated handle-change operations with integration tests.
-4. Bring over Ghost work/contributions; then Table Talks, projects, research, moderation, notifications, and file storage.
-5. Complete staging/deployment/rollback; migrate approved data and decommission PocketBase only after verified parity.
-
-**Never paste service-role or secret keys into source, terminal logs, issues, or chat.** Publishable browser keys are not authorization: RLS remains mandatory.
+1. Complete the [real registration and email verification acceptance test](normal-registration-test.md).
+2. Test actual default \`ghost\` role, profile ownership, banned updates, handle collisions, and suspension behavior.
+3. Migrate Ghost contributions and work versioning, review/moderation, projects, Table Talks, directory, and notifications in reviewed, versioned slices.
+4. Build server-side/SSR production authentication and staging cutover plan. Keep PocketBase and Horizons available until validated and explicitly approved.
