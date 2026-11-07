@@ -51,7 +51,7 @@ jobs:
       run:
         working-directory: apps/pocketbase
     env:
-      PB_ENCRYPTION_KEY: ci-disposable-key-only-not-for-production
+      PB_ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef
       LGN_APP_URL: http://127.0.0.1:3000
     steps:
       - uses: actions/checkout@v4
