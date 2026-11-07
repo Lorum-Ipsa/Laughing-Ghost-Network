@@ -23,12 +23,12 @@ Place PocketBase on your PATH (or run its binary via its full path), then:
 
 ```powershell
 cd apps/pocketbase
-$env:PB_ENCRYPTION_KEY = "CHANGE-TO-A-UNIQUE-LOCAL-KEY"
+$env:PB_ENCRYPTION_KEY = -join ([Security.Cryptography.RandomNumberGenerator]::GetBytes(16) | ForEach-Object { $_.ToString("x2") })
 $env:LGN_APP_URL = "http://127.0.0.1:3000"
 pocketbase serve --http=127.0.0.1:8090 --encryptionEnv=PB_ENCRYPTION_KEY --dir=./pb_data --migrationsDir=./pb_migrations --hooksDir=./pb_hooks
 ```
 
-Only bind the backend to localhost. Set up a **PocketBase superuser** using its private local installation flow (or `pocketbase superuser create EMAIL PASSWORD --dir=./pb_data`; do not paste real passwords into shared logs). Then deliberately create a separate LGN `users` member, assign `role=admin` in the PocketBase administration interface, and test its permissions. These are **two distinct identities**.
+The example above generates a valid 32-character encryption key for a fresh disposable database. Preserve that key securely between restarts of the same database; changing it can make previously encrypted fields unreadable. Only bind the backend to localhost. Set up a **PocketBase superuser** using its private local installation flow (or `pocketbase superuser create EMAIL PASSWORD --dir=./pb_data`; do not paste real passwords into shared logs). Then deliberately create a separate LGN `users` member, assign `role=admin` in the PocketBase administration interface, and test its permissions. These are **two distinct identities**.
 
 ## Web — another terminal
 
