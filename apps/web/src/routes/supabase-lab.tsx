@@ -72,6 +72,7 @@ export default function SupabaseIdentityLab() {
       return;
     }
     let active = true;
+    setProfile(null);
     void findOwnProfile(client).then((value) => {
       if (active) setProfile(value);
     }).catch((e) => {
@@ -79,6 +80,14 @@ export default function SupabaseIdentityLab() {
     });
     return () => { active = false; };
   }, [client, user?.id]);
+
+  // Reload the editable draft from the fetched profile. Clearing it when the
+  // account changes prevents displaying data from a previous test session.
+  useEffect(() => {
+    setDisplayName(profile?.display_name ?? '');
+    setBio(profile?.bio ?? '');
+    if (!profile) setHandle('');
+  }, [profile]);
 
   async function refreshProfile() {
     if (!client || !user) return;
