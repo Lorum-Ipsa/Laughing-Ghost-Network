@@ -1,6 +1,6 @@
 # Import package review — 2026-11-07
 
-**Status: ready for source upload / runtime validation pending.** This PR does not yet contain the exported application files.
+**Status: source imported in draft PR #3.** CI now passes dependency installation, React build, TypeScript, PocketBase migrations from an empty database, and browser-facing homepage and health smoke checks. Full account/role and email workflows remain untested.
 
 ## Original
 
@@ -25,24 +25,22 @@
 - Common token/secret patterns (private keys, GitHub/OpenAI/AWS/Stripe keys): 0 matches.
 - Sanitized ZIP SHA256: `10a40a55a699ea679cfe5b9dd51f01623b4215dfc83e006ca762a70046a8dbd8`.
 
-**This is a narrow static screen, NOT comprehensive security clearance.** No app dependencies or PocketBase binary were available in the preparation environment, so build, migration, and end-to-end tests have not been run.
+**This static screening is not a security certification.** GitHub Actions now tests the frontend build, fresh PocketBase migrations, absence of automatic superuser creation, and public homepage response. Authentication, role permissions, and email flows are not yet verified.
 
-## Import instructions
+## Import history
 
-Download the sanitized import ZIP from the assistant's conversation attachment. Run [Import-LGN.ps1](../../scripts/Import-LGN.ps1) on a local Windows workstation with Git + Node installed, or copy `apps`, the root workspace manifests, and import notes to this branch manually.
-
-The script verifies the ZIP SHA256, clones a new checkout, checks out this branch, stages files, runs the repository safety check, and pushes only when explicitly invoked with `-Push`. No changes are made directly to `main`.
+The sanitized application was uploaded to `feature/horizons-source-import` and is reviewable in [PR #3](https://github.com/Lorum-Ipsa/Laughing-Ghost-Network/pull/3). Do not rerun the original one-time import script against this populated branch. Use the [Codespaces preview guide](../codespaces-preview.md) or [local setup](../development-local.md) for development.
 
 ## Acceptance criteria (before marking PR ready)
 
-- [ ] Sanitized app files committed to this branch
+- [x] Sanitized app files committed to this branch
 - [ ] Confirm no private keys or real member data committed
-- [ ] Node/Bun package install and React build pass
-- [ ] PocketBase starts from a fresh empty DB and migrations complete
-- [ ] Admin first-signup / mass promotion is no longer possible
+- [x] Node/Bun package install, React build and TypeScript checks pass
+- [x] PocketBase fresh migration completes and server starts
+- [x] Known automatic admin promotion removed; no PocketBase superuser is created by migration
 - [ ] Owner admin provisioned through a controlled procedure, never public signup
 - [ ] Member-auth and role-based authorization matrix tested
-- [ ] Preview route and PocketBase proxy work outside Horizons
+- [x] Disposable preview can serve the homepage and API health route outside Horizons
 - [ ] Production cutover explicitly approved in a separate PR
 
 Keep the existing Horizons site running; do not expose this import as production.
