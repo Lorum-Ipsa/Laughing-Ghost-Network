@@ -1,6 +1,6 @@
 import { Link } from 'react-router';
 import { ArrowLeft } from 'lucide-react';
-import { useAuth } from '@/hooks/use-auth';
+import { useSupabaseAuth } from '@/hooks/use-supabase-auth';
 
 /**
  * A "Back to Ghost Space" control shown on the public Ghost profile page when a
@@ -10,7 +10,7 @@ import { useAuth } from '@/hooks/use-auth';
  * the loading frame render nothing, so SSR output and first paint match.
  */
 export function BackToGhostSpace() {
-	const { isAuthed, isLoading } = useAuth();
+	const { isAuthed, isLoading } = useSupabaseAuth();
 
 	if (isLoading || !isAuthed) return null;
 

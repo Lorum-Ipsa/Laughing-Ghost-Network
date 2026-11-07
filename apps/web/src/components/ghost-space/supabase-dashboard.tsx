@@ -91,7 +91,7 @@ export function SupabaseGhostSpaceDashboard() {
 
   return (
     <GhostSpaceLayout section={section} handle={profile?.handle || 'New Ghost'}
-      publicProfilePath="" onSignOut={() => { void signOut(); }}>
+      publicProfilePath={profile ? `/ghosts/${encodeURIComponent(profile.handle)}` : ""} onSignOut={() => { void signOut(); }}>
       {notice && <p role="status" className="status-message">{notice}</p>}
       {error && <p role="alert" className="status-message error-message">{error}</p>}
       {!profile ? (

@@ -1,5 +1,5 @@
 import { Link } from 'react-router';
-import { ArrowUpRight, ShieldCheck } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
 import { WorkCard } from '@/components/work-card';
 import { GhostAvatar } from '@/components/ghost-avatar';
 import {
@@ -115,8 +115,8 @@ export function Profile({ profile, work, avatarUrlOverride }: { profile: GhostPr
       {showIdentities && identities.length > 0 && (
         <section className="profile-section rail">
           <div className="profile-section-head">
-            <span className="eyebrow"><span className="tiny-dot" />External identity / verification</span>
-            <h2>Verified ownership, not legal identity</h2>
+            <span className="eyebrow"><span className="tiny-dot" />External links / self-declared</span>
+            <h2>Member-provided external links</h2>
           </div>
           <ul className="identity-list">
             {identities.map((id) => (
@@ -125,11 +125,11 @@ export function Profile({ profile, work, avatarUrlOverride }: { profile: GhostPr
                   <span className="identity-platform">{id.platform}</span>
                   <ArrowUpRight size={14} />
                 </a>
-                <span className="ownership-badge"><ShieldCheck size={11} /> Verified ownership</span>
+                <span className="ownership-badge">Unverified link</span>
               </li>
             ))}
           </ul>
-          <p className="muted-note">These links verify platform ownership asserted by the member. They do not confirm legal identity, and civil identity remains private.</p>
+          <p className="muted-note">These links are supplied by the member. LGN has not independently verified account control or legal identity.</p>
         </section>
       )}
 
