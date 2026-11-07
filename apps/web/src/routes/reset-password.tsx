@@ -6,7 +6,7 @@ import { seo } from '@/lib/seo';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 
 export function meta({ matches, location }: Route.MetaArgs) {
-  return seo({ matches, location }, { title: 'Recover Ghost account — LGN', noindex: true });
+  return seo({ matches, location }, { title: 'Recover Ghost account — LGN', description: 'Reset your private LGN Ghost account password securely.', noindex: true });
 }
 
 export default function ResetPassword() {
