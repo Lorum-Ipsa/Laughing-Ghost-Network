@@ -22,6 +22,7 @@ export function VerificationBanner() {
 		if (!user?.email) return;
 		setBusy(true);
 		setError('');
+		setSent(false);
 		try {
 			await pb.collection('users').requestVerification(user.email);
 			setSent(true);
@@ -47,7 +48,7 @@ export function VerificationBanner() {
 				</button>
 				<Link className="button button-outline" to="/verify-email">Verify now <ArrowUpRight size={14} /></Link>
 			</div>
-			{sent && <p className="gs-verify-banner-note">A new verification email has been sent to {user?.email}.</p>}
+			{sent && <p className="gs-verify-banner-note">Verification request accepted for {user?.email}. Check your inbox; delivery is not confirmed.</p>}
 			{error && <p className="gs-verify-banner-note gs-verify-banner-error">{error}</p>}
 		</div>
 	);

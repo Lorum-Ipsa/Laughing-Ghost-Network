@@ -25,10 +25,10 @@ export function LoginForm() {
 		try {
 			if (mode === 'reset') {
 				await pb.collection('users').requestPasswordReset(email);
-				setMessage('If an account matches this address, a reset email has been sent to you.');
+				setMessage('If an account matches this address, a password-reset request was accepted. Check your inbox; delivery depends on the configured email service.');
 			} else if (mode === 'verify') {
 				await pb.collection('users').requestVerification(email);
-				setMessage('If an account matches this address, a verification email has been sent to you.');
+				setMessage('If an account matches this address, a verification request was accepted. Check your inbox; delivery depends on the configured email service.');
 			} else {
 				await login(email, String(data.get('password')));
 				// Unverified members may sign in only far enough to resend the

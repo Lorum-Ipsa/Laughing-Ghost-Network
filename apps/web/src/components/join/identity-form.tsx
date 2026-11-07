@@ -64,9 +64,8 @@ export function IdentityForm() {
         location_disclosure: disclosure,
         location_country: data.get('location_country') || '',
       });
-      // Send the verification email. The account is created and authenticated
-      // either way; a delivery failure is surfaced on the verification page
-      // rather than silently succeeding.
+      // Request the verification email. A successful API response is not
+      // proof of SMTP delivery. Surface request errors on the next page.
       const signupEmail = String(data.get('email') || pb.authStore.record?.email || '');
       let verifyError = '';
       if (signupEmail) {

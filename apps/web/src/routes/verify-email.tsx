@@ -39,11 +39,13 @@ export default function VerifyEmail() {
 	const token = params.get('token');
 	const location = useLocation();
 	const { user, isLoading } = useAuth();
-	const stateEmail = (location.state as { email?: string } | null)?.email;
+	const navigationState = location.state as { email?: string; error?: string } | null;
+	const stateEmail = navigationState?.email;
+	const initialRequestError = navigationState?.error || '';
 	const email = stateEmail || user?.email || '';
 
 	const [status, setStatus] = useState<VerifyState>(token ? 'verifying' : 'pending');
-	const [error, setError] = useState('');
+	const [error, setError] = useState(() => initialRequestError);
 	const [resending, setResending] = useState(false);
 	const [resent, setResent] = useState(false);
 
@@ -118,7 +120,7 @@ export default function VerifyEmail() {
 						) : (
 							<Link className="button button-light full-width" to="/login">Sign in to resend <ArrowUpRight size={16} /></Link>
 						)}
-						{resent && <p className="status-message" role="status">A new verification email has been sent to {email}.</p>}
+						{resent && <p className="status-message" role="status">Verification request accepted for {email}. Check your inbox; delivery is not confirmed.</p>}
 						<div className="auth-switch">Need to sign in? <Link to="/login">Sign in</Link></div>
 					</div>
 				</>
@@ -129,7 +131,7 @@ export default function VerifyEmail() {
 					<h1>Check your email<span className="accent-period">.</span></h1>
 					<div className="form-panel">
 						<p className="muted-note" style={{ marginBottom: 20 }}>
-							We sent a verification email{email ? <> to <strong>{email}</strong></> : null}. Click the link inside to activate your Ghost account.
+							{error ? <>We could not request a verification email{email ? <> for <strong>{email}</strong></> : null}. Your Ghost account may exist, but its email is still unverified. Check the error below and retry once email delivery is configured.</> : <>A verification email was requested{email ? <> for <strong>{email}</strong></> : null}. Check your inbox and spam folder. Delivery requires a configured email service; a successful request alone does not confirm that a message arrived.</>}
 						</p>
 						{!isLoading && !user && (
 							<p className="muted-note" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -144,7 +146,7 @@ export default function VerifyEmail() {
 								</button>
 							</form>
 						)}
-						{resent && <p className="status-message" role="status">A new verification email has been sent to {email}.</p>}
+						{resent && <p className="status-message" role="status">Verification request accepted for {email}. Check your inbox; delivery is not confirmed.</p>}
 						{!isLoading && user ? (
 							<Link className="button button-outline full-width" to="/ghost-space" style={{ marginTop: 12 }}>Go to Ghost Space <ArrowUpRight size={16} /></Link>
 						) : (
