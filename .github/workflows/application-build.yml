@@ -115,3 +115,8 @@ jobs:
           cat "$RUNNER_TEMP/health.json"
           curl --fail --silent http://127.0.0.1:3000/ --output "$RUNNER_TEMP/home.html"
           grep -qi 'Laughing Ghost' "$RUNNER_TEMP/home.html"
+          # The experimental Supabase identity page must be unavailable unless
+          # explicitly enabled by an individual developer.
+          status=$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:3000/supabase-lab)
+          test "$status" = '404'
+

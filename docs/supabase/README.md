@@ -4,8 +4,8 @@
 
 - **Development project:** [`lgn-development`](https://supabase.com/dashboard/project/oatdfrnytmliunauxqyd), US East (Northern Virginia).
 - **Original app:** LGN's React/React Router UI still uses **PocketBase**. The working Codespaces preview and PR #3 are preserved.
-- **Supabase foundation:** four tables have been created, no real users or seeded profiles.
-- **Scope:** schema and policy foundation **only**. The frontend has not been wired to Supabase, and full authentication/authorization flows are not yet end-to-end tested.
+- **Supabase foundation:** five tables have been created, including an owner-only profile lookup table; no real users or seeded profiles.
+- **Scope:** foundation schema and an isolated development-only Supabase auth/identity test route. The main frontend still uses PocketBase. Full authentication/authorization flows have not been validated end to end.
 
 This directory's [SQL snapshot](identity-foundation.sql) records the DDL applied to the development database. It is **not** a generated Supabase CLI migration and must **not** be replayed against the already-initialized development project.
 
@@ -18,6 +18,7 @@ This directory's [SQL snapshot](identity-foundation.sql) records the DDL applied
 | `ghost_profiles` basic public identity | `public.ghost_profiles` | Public safe fields only, one profile per account |
 | Persistent `ghost_profiles.handle` | `lgn_private.reserved_handles` | Server-owned ledger; handles cannot be reused after deletion |
 | Member-specific language/visibility settings | `public.ghost_profile_preferences` | Only the authenticated account owner |
+| Secure profile self-lookup | `public.ghost_profile_links` | Each member can read only their own profile ID; the private owner ID remains hidden |
 | Ghost work / Table Talks / projects / notifications | Not yet migrated | Remain with PocketBase until separate review |
 | Avatars, verified external identities, visibility | Not yet migrated | Storage and selective disclosure require dedicated design |
 
@@ -41,12 +42,16 @@ Supabase confirmed all four tables exist with **RLS enabled** and no member data
 
 **Still unverified:** signup trigger behavior with a disposable Auth user, positive/negative owner RLS tests, session revocation after suspension, frontend login integration, profile field parity, privileged administrator routes, avatar privacy, and the rest of the LGN schema. No live data should be imported until these pass.
 
+## Browser-facing identity test
+
+[View the isolated Supabase identity test plan](identity-test-plan.md). The test route is off by default, is inaccessible in production, and does not replace LGN's existing PocketBase sign-in.
+
 ## Version-control next step
 
-This is a **schema snapshot**, not an official CLI migration. In Codespaces, once a supported Supabase CLI and Docker-compatible runtime are available:
+The initial identity SQL is a **schema snapshot**, not an official CLI migration. The subsequent self-lookup was applied to the remote project as migration `20261107205249`; see [its SQL record](ghost-profile-self-lookup.sql). In Codespaces, once a supported Supabase CLI and Docker-compatible runtime are available (CLI v3 now targets local by default; remote operations need `--remote`):
 
 1. Read [Supabase's remote-to-local workflow](https://supabase.com/docs/guides/local-development/cli-workflows).
-2. Use `supabase --help` and `supabase db pull --help` to confirm the current commands.
+2. Use `supabase --version`, `supabase --help`, and `supabase db pull --help` to confirm CLI v3 commands. For the hosted project, explicitly use `--remote`.
 3. Link **only** the `lgn-development` project, then capture the remote baseline with the documented `db pull` workflow. Review the generated `supabase/migrations` SQL before committing.
 4. Check migration history and diff; do not re-run this SQL snapshot on the same database.
 5. From then on create new migration files using `supabase migration new <name>` before pushing changes through reviewed PRs.
