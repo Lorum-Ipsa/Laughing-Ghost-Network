@@ -13,39 +13,14 @@
 //   - ghost_participations create     → participation_received (to the work owner)
 //   - ghost_applications update       → application_accepted / application_declined
 
-function notify(app, owner, type, title, body, link, relatedWork) {
-  if (!owner) return;
-  try {
-    let filter = 'owner = {:owner} && type = {:type}';
-    const params = { owner, type };
-    if (relatedWork) {
-      filter += ' && related_work = {:rw}';
-      params.rw = relatedWork;
-    }
-    const existing = app.findRecordsByFilter('ghost_notifications', filter, '-created', 1, 0, params);
-    if (existing.length > 0) return; // idempotent — already notified
-
-    const col = app.findCollectionByNameOrId('ghost_notifications');
-    const rec = new Record(col);
-    rec.set('owner', owner);
-    rec.set('type', type);
-    rec.set('title', title);
-    rec.set('body', body || '');
-    rec.set('link', link || '');
-    rec.set('read', false);
-    if (relatedWork) rec.set('related_work', relatedWork);
-    app.save(rec);
-  } catch (err) {
-    app.logger().error('notify failed', 'type', type, 'err', String(err));
-  }
-}
+// notify is loaded by each isolated handler from pb_hooks/lib/notify.js
 
 // Welcome a new Ghost (skip seeded example profiles).
 onRecordAfterCreateSuccess((e) => {
   if (e.record.getBool('example')) { e.next(); return; }
   const owner = e.record.getString('owner');
   const handle = e.record.getString('handle');
-  notify(
+  require(`${__hooks}/lib/notify.js`).notify(
     e.app,
     owner,
     'welcome',
@@ -64,7 +39,7 @@ onRecordAfterUpdateSuccess((e) => {
   const id = e.record.id;
   const title = e.record.getString('title');
   if (status === 'published') {
-    notify(
+    require(`${__hooks}/lib/notify.js`).notify(
       e.app,
       owner,
       'work_published',
@@ -74,7 +49,7 @@ onRecordAfterUpdateSuccess((e) => {
       id,
     );
   } else if (status === 'rejected') {
-    notify(
+    require(`${__hooks}/lib/notify.js`).notify(
       e.app,
       owner,
       'work_rejected',
@@ -98,7 +73,7 @@ onRecordAfterCreateSuccess((e) => {
     const workOwner = work.getString('owner');
     const workTitle = work.getString('title');
     if (workOwner && workOwner !== participant) {
-      notify(
+      require(`${__hooks}/lib/notify.js`).notify(
         app,
         workOwner,
         'participation_received',
@@ -120,7 +95,7 @@ onRecordAfterUpdateSuccess((e) => {
   const owner = e.record.getString('owner');
   const handle = e.record.getString('handle');
   if (status === 'accepted') {
-    notify(
+    require(`${__hooks}/lib/notify.js`).notify(
       e.app,
       owner,
       'application_accepted',
@@ -130,7 +105,7 @@ onRecordAfterUpdateSuccess((e) => {
       '',
     );
   } else if (status === 'declined') {
-    notify(
+    require(`${__hooks}/lib/notify.js`).notify(
       e.app,
       owner,
       'application_declined',
@@ -156,7 +131,7 @@ onRecordAfterCreateSuccess((e) => {
     const recipientOwner = recipient.getString('owner');
     if (recipientOwner && recipientOwner !== sender) {
       const typeLabel = requestType ? requestType.replace(/_/g, ' ') : 'collaboration';
-      notify(
+      require(`${__hooks}/lib/notify.js`).notify(
         app,
         recipientOwner,
         'collaboration_request_received',
@@ -177,7 +152,7 @@ onRecordAfterUpdateSuccess((e) => {
   const status = e.record.getString('status');
   const sender = e.record.getString('owner');
   if (status !== 'accepted' && status !== 'declined') { e.next(); return; }
-  notify(
+  require(`${__hooks}/lib/notify.js`).notify(
     e.app,
     sender,
     'collaboration_request_updated',
@@ -204,7 +179,7 @@ onRecordAfterCreateSuccess((e) => {
     const workOwner = work.getString('owner');
     const workTitle = work.getString('title');
     if (workOwner) {
-      notify(
+      require(`${__hooks}/lib/notify.js`).notify(
         app,
         workOwner,
         'review_received',
@@ -233,7 +208,7 @@ onRecordAfterUpdateSuccess((e) => {
     const workOwner = work.getString('owner');
     const workTitle = work.getString('title');
     if (workOwner) {
-      notify(
+      require(`${__hooks}/lib/notify.js`).notify(
         app,
         workOwner,
         'review_feedback',

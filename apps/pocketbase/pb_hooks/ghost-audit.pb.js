@@ -13,20 +13,7 @@
 // Role changes on users are audited via the before/after comparison below so a
 // privilege escalation is always recorded.
 
-function audit(app, actor, action, targetType, targetId, details) {
-  try {
-    const col = app.findCollectionByNameOrId('ghost_audit_log');
-    const rec = new Record(col);
-    rec.set('actor', actor || '');
-    rec.set('action', action);
-    rec.set('target_type', targetType || '');
-    rec.set('target_id', targetId || '');
-    rec.set('details', details || '');
-    app.save(rec);
-  } catch (err) {
-    app.logger().error('audit write failed', 'err', String(err));
-  }
-}
+// audit is loaded by each isolated handler from pb_hooks/lib/audit.js
 
 // Contribution moderation decisions.
 onRecordAfterUpdateSuccess((e) => {
@@ -35,7 +22,7 @@ onRecordAfterUpdateSuccess((e) => {
   const id = e.record.id;
   const title = e.record.getString('title');
   if (['published', 'rejected', 'archived', 'revision_requested'].includes(status)) {
-    audit(e.app, owner, 'work_' + status, 'ghost_work', id, '"' + title + '" → ' + status);
+    require(`${__hooks}/lib/audit.js`).audit(e.app, owner, 'work_' + status, 'ghost_work', id, '"' + title + '" → ' + status);
   }
   e.next();
 }, 'ghost_work');
@@ -51,9 +38,9 @@ onRecordUpdateRequest((e) => {
     const actorId = auth ? auth.id : '';
     const title = e.record.getString('title');
     if (!!newDeleted) {
-      audit(e.app, actorId, 'soft_delete', 'ghost_work', e.record.id, 'Soft-deleted "' + title + '"');
+      require(`${__hooks}/lib/audit.js`).audit(e.app, actorId, 'soft_delete', 'ghost_work', e.record.id, 'Soft-deleted "' + title + '"');
     } else {
-      audit(e.app, actorId, 'work_restored', 'ghost_work', e.record.id, 'Restored "' + title + '"');
+      require(`${__hooks}/lib/audit.js`).audit(e.app, actorId, 'work_restored', 'ghost_work', e.record.id, 'Restored "' + title + '"');
     }
   }
   e.next();
@@ -67,7 +54,7 @@ onRecordUpdateRequest((e) => {
     const auth = e.requestInfo.auth;
     const actorId = auth ? auth.id : '';
     const handle = e.record.getString('handle');
-    audit(
+    require(`${__hooks}/lib/audit.js`).audit(
       e.app, actorId, 'soft_delete', 'ghost_profiles', e.record.id,
       !!newDeleted ? 'Soft-deleted profile "' + handle + '"' : 'Restored profile "' + handle + '"',
     );
@@ -79,7 +66,7 @@ onRecordUpdateRequest((e) => {
 onRecordAfterUpdateSuccess((e) => {
   const status = e.record.getString('status');
   if (['accepted', 'declined'].includes(status)) {
-    audit(e.app, e.record.getString('owner'), 'application_' + status, 'ghost_applications', e.record.id, 'handle: ' + e.record.getString('handle'));
+    require(`${__hooks}/lib/audit.js`).audit(e.app, e.record.getString('owner'), 'application_' + status, 'ghost_applications', e.record.id, 'handle: ' + e.record.getString('handle'));
   }
   e.next();
 }, 'ghost_applications');
@@ -88,7 +75,7 @@ onRecordAfterUpdateSuccess((e) => {
 onRecordAfterUpdateSuccess((e) => {
   const status = e.record.getString('status');
   if (['approved', 'declined'].includes(status)) {
-    audit(e.app, e.record.getString('owner'), 'handle_change_' + status, 'ghost_handle_changes', e.record.id,
+    require(`${__hooks}/lib/audit.js`).audit(e.app, e.record.getString('owner'), 'handle_change_' + status, 'ghost_handle_changes', e.record.id,
       e.record.getString('current_handle') + ' → ' + e.record.getString('requested_handle'));
   }
   e.next();
@@ -96,7 +83,7 @@ onRecordAfterUpdateSuccess((e) => {
 
 // A report was submitted.
 onRecordAfterCreateSuccess((e) => {
-  audit(e.app, e.record.getString('owner'), 'report_submitted', 'ghost_reports', e.record.id, e.record.getString('subject'));
+  require(`${__hooks}/lib/audit.js`).audit(e.app, e.record.getString('owner'), 'report_submitted', 'ghost_reports', e.record.id, e.record.getString('subject'));
   e.next();
 }, 'ghost_reports');
 
@@ -113,13 +100,13 @@ onRecordUpdateRequest((e) => {
   const oldMod = e.record.getBool('moderator');
   const oldSuspended = e.record.getBool('suspended');
   if (newRole !== undefined && String(newRole) !== oldRole) {
-    audit(e.app, actorId, 'role_changed', 'users', e.record.id, 'role: ' + oldRole + ' → ' + newRole);
+    require(`${__hooks}/lib/audit.js`).audit(e.app, actorId, 'role_changed', 'users', e.record.id, 'role: ' + oldRole + ' → ' + newRole);
   }
   if (newMod !== undefined && !!newMod !== oldMod) {
-    audit(e.app, actorId, 'role_changed', 'users', e.record.id, 'moderator: ' + oldMod + ' → ' + !!newMod);
+    require(`${__hooks}/lib/audit.js`).audit(e.app, actorId, 'role_changed', 'users', e.record.id, 'moderator: ' + oldMod + ' → ' + !!newMod);
   }
   if (newSuspended !== undefined && !!newSuspended !== oldSuspended) {
-    audit(e.app, actorId, 'account_suspended', 'users', e.record.id,
+    require(`${__hooks}/lib/audit.js`).audit(e.app, actorId, 'account_suspended', 'users', e.record.id,
       'suspended: ' + oldSuspended + ' → ' + !!newSuspended);
   }
   e.next();
