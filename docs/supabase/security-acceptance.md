@@ -25,7 +25,7 @@ This is direct **database RLS behavior testing**, not merely a textual inspectio
 
 The Supabase security advisor currently reports:
 
-- **Warning — Leaked Password Protection Disabled:** Configure [Auth password security](https://supabase.com/dashboard/project/oatdfrnytmliunauxqyd/auth/providers?provider=Email). Supabase supports screening passwords against known leaked credentials; see [password security documentation](https://supabase.com/docs/guides/auth/password-security). This setting is in the Auth dashboard and was **not automatically changed**.
+- **Leaked-password setting:** An earlier scan reported leaked-password protection disabled. The latest Nov 7 scan no longer reports that warning. Review the [Auth email/password settings](https://supabase.com/dashboard/project/oatdfrnytmliunauxqyd/auth/providers?provider=Email) during staging hardening; do not assume any configuration change was made through this repository.
 - **Two informational notices — RLS enabled without policies** on `lgn_private.member_access` and `lgn_private.reserved_handles`: intentional. These are private, unexposed server-only tables with no client grants, and their special helper functions are restricted. Review if permissions or schema exposure change.
 
 ## Repeatability and limitations
