@@ -4,6 +4,8 @@ import { Link, useNavigate, useSearchParams } from 'react-router';
 import { ArrowUpRight } from 'lucide-react';
 import { useSupabaseAuth } from '@/hooks/use-supabase-auth';
 import { supabaseBrowser } from '@/lib/supabase-browser';
+import { SupabaseProfileEditor } from '@/components/ghost-space/profile/supabase-profile-editor';
+import { SupabaseContributions } from '@/components/ghost-space/contributions/supabase-contributions';
 import {
   claimGhostProfile, findMyGhostProfile, HANDLE_PATTERN, signupDetails,
   type GhostIdentity,
@@ -15,7 +17,7 @@ const sections: GhostSpaceSection[] = [
   'network', 'notifications', 'settings',
 ];
 const pendingTitles: Record<string, string> = {
-  contributions: 'Contributions', projects: 'Projects', 'table-talks': 'Table Talks',
+  projects: 'Projects', 'table-talks': 'Table Talks',
   network: 'Network', notifications: 'Notifications',
 };
 
@@ -33,12 +35,6 @@ export function SupabaseGhostSpaceDashboard() {
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
   const [newHandle, setNewHandle] = useState('');
-  const [name, setName] = useState('');
-  const [pronouns, setPronouns] = useState('');
-  const [bio, setBio] = useState('');
-  const [portfolio, setPortfolio] = useState('');
-  const [locationDisclosure, setLocationDisclosure] = useState('undisclosed');
-  const [country, setCountry] = useState('');
 
   useEffect(() => {
     if (!user?.email_confirmed_at) return;
@@ -56,7 +52,6 @@ export function SupabaseGhostSpaceDashboard() {
         }
         if (!active) return;
         setProfile(current);
-        if (current) fill(current);
       } catch (e) {
         if (!active) return;
         setClaimError(e instanceof Error ? e.message : 'Could not create your Ghost profile.');
@@ -65,14 +60,6 @@ export function SupabaseGhostSpaceDashboard() {
     return () => { active = false; };
   }, [user?.id]);
 
-  function fill(current: GhostIdentity) {
-    setName(current.display_name);
-    setPronouns(current.pronouns);
-    setBio(current.bio);
-    setPortfolio(current.portfolio);
-    setLocationDisclosure(current.location_disclosure);
-    setCountry(current.location_country);
-  }
 
   async function claim(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -84,36 +71,12 @@ export function SupabaseGhostSpaceDashboard() {
     try {
       const current = await claimGhostProfile(user, handle, signupDetails(user));
       setProfile(current);
-      fill(current);
       setNotice('Your Ghost identity is active.');
     } catch (e) {
       setClaimError(e instanceof Error ? e.message : 'Could not claim handle.');
     } finally { setBusy(false); }
   }
 
-  async function saveProfile(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!profile || busy) return;
-    setBusy(true);
-    setError('');
-    setNotice('');
-    try {
-      const { error: updateError } = await supabaseBrowser().from('ghost_profiles').update({
-        display_name: name.slice(0,100),
-        pronouns: pronouns.slice(0,40),
-        bio: bio.slice(0,2000),
-        portfolio: portfolio.slice(0,2048),
-        location_disclosure: locationDisclosure,
-        location_country: locationDisclosure === 'country' ? country.slice(0,100) : '',
-      }).eq('id', profile.id);
-      if (updateError) throw updateError;
-      const saved = await findMyGhostProfile();
-      if (saved) setProfile(saved);
-      setNotice('Public Ghost profile saved.');
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not save your profile.');
-    } finally { setBusy(false); }
-  }
 
   async function signOut() {
     await supabaseBrowser().auth.signOut();
@@ -157,8 +120,8 @@ export function SupabaseGhostSpaceDashboard() {
                 <Link className="button button-light" to="/ghost-space?section=profile">Edit my profile <ArrowUpRight size={15}/></Link>
               </div>
               <div className="form-panel"><h2>What's available now</h2>
-                <p>Registration, email verification, account sign-in, profile creation, and profile editing are connected to Supabase.</p>
-                <p className="muted-note">Contributions, projects, Table Talks and notifications are not yet migrated. The previous PocketBase experience remains in the development branch for comparison, but these features cannot be used through this new account yet.</p>
+                <p>Registration, email confirmation, the complete Ghost profile editor, and contribution drafting/revision history are connected to Supabase.</p>
+                <p className="muted-note">Contributions support private drafts and submission for review. Reviewer publication, projects, Table Talks, notifications, custom avatar uploads, and additional account settings are not yet migrated.</p>
               </div>
             </div>
             <div className="gs-grid-side">
@@ -171,34 +134,17 @@ export function SupabaseGhostSpaceDashboard() {
           </div>
         </section>
       ) : section === 'profile' ? (
-        <section className="gs-placeholder">
-          <span className="eyebrow"><span className="tiny-dot"/> GHOST SPACE / PROFILE</span>
-          <h1>My Ghost profile.</h1>
-          <p>Your public handle is permanent: <strong>@{profile.handle}</strong>. Only the information you choose below is public.</p>
-          <form className="form-panel" onSubmit={saveProfile}>
-            <div className="field"><label htmlFor="gs-display-name">Display name (optional)</label>
-              <input id="gs-display-name" maxLength={100} value={name} onChange={e=>setName(e.target.value)}/></div>
-            <div className="field"><label htmlFor="gs-pronouns">Pronouns (optional)</label>
-              <input id="gs-pronouns" maxLength={40} value={pronouns} onChange={e=>setPronouns(e.target.value)}/></div>
-            <div className="field"><label htmlFor="gs-bio">About your work</label>
-              <textarea id="gs-bio" maxLength={2000} value={bio} onChange={e=>setBio(e.target.value)}/></div>
-            <div className="field"><label htmlFor="gs-portfolio">Portfolio link</label>
-              <input id="gs-portfolio" type="url" maxLength={2048} value={portfolio} onChange={e=>setPortfolio(e.target.value)}/></div>
-            <div className="field"><label htmlFor="gs-disclosure">Location disclosure</label>
-              <select id="gs-disclosure" value={locationDisclosure} onChange={e=>setLocationDisclosure(e.target.value)}>
-                <option value="undisclosed">Undisclosed</option>
-                <option value="remote">Remote</option>
-                <option value="country">Country</option>
-              </select></div>
-            {locationDisclosure==='country' && <div className="field"><label htmlFor="gs-country">Country (optional)</label>
-              <input id="gs-country" maxLength={100} value={country} onChange={e=>setCountry(e.target.value)}/></div>}
-            <button disabled={busy} className="button button-light">{busy ? 'Saving…' : 'Save profile'}</button>
-          </form>
-        </section>
+        <SupabaseProfileEditor profile={profile} onSaved={(updated) => {
+          setProfile(updated);
+          setNotice('Profile updated successfully.');
+          setError('');
+        }} />
+      ) : section === 'contributions' ? (
+        <SupabaseContributions profile={profile} userId={user.id} />
       ) : section === 'settings' ? (
         <div className="gs-placeholder"><span className="eyebrow">GHOST SPACE / SETTINGS</span><h1>Account settings.</h1>
           <p>Your account is authenticated through Supabase. Email confirmation is required, and your public handle cannot be changed directly.</p>
-          <p>More privacy, language, session and multi-factor settings are scheduled for the next migration stage.</p>
+          <p>More private preferences, account recovery controls, session management and multi-factor settings are scheduled for the next migration stage.</p>
           <Link className="button button-outline" to="/ghost-space?section=profile">Edit public profile</Link>
         </div>
       ) : (
