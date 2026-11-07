@@ -1,0 +1,44 @@
+name: LGN application validation
+on:
+  pull_request:
+    paths:
+      - 'apps/**'
+      - 'package.json'
+      - 'bun.lock'
+      - 'bunfig.toml'
+      - 'scripts/check-app-source.mjs'
+      - '.github/workflows/application-build.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/**'
+      - 'package.json'
+      - 'bun.lock'
+      - 'bunfig.toml'
+      - 'scripts/check-app-source.mjs'
+      - '.github/workflows/application-build.yml'
+permissions:
+  contents: read
+jobs:
+  source-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/check-repository.mjs
+      - run: node scripts/check-app-source.mjs
+  frontend-build:
+    name: Install, build and typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: Install frozen dependency lockfile
+        run: bun install --frozen-lockfile
+      - name: Build SSR frontend
+        run: bun run build
+      - name: Typecheck
+        run: bun run typecheck

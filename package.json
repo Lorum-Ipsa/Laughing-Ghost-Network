@@ -5,11 +5,12 @@
   "private": true,
   "scripts": {
     "setup": "bun install",
-    "dev": "concurrently --kill-others --raw \"npm run dev --prefix apps/web\" \"npm run dev --prefix apps/pocketbase\"",
-    "build": "concurrently --raw \"npm run build --prefix apps/web\"",
-    "start": "concurrently --kill-others --raw \"npm run start --prefix apps/web\" \"npm run start --prefix apps/pocketbase\"",
-    "lint": "concurrently --raw \"npm run lint --prefix apps/web\"",
-    "typecheck": "concurrently --raw \"npm run typecheck --prefix apps/web\""
+    "dev": "concurrently --kill-others --raw \"npm run dev --workspace web\" \"npm run dev --workspace pocketbase-app\"",
+    "build": "npm run build --workspace web",
+    "start": "concurrently --kill-others --raw \"npm run start --workspace web\" \"npm run start --workspace pocketbase-app\"",
+    "lint": "npm run lint --workspace web",
+    "typecheck": "npm run typecheck --workspace web",
+    "check:source": "node scripts/check-app-source.mjs"
   },
   "devDependencies": {
     "concurrently": "^10.0.6",

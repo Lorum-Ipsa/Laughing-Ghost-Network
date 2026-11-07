@@ -1,21 +1,12 @@
 /// <reference path="../pb_data/types.d.ts" />
+
+// No-op: superuser provisioning is a deliberate administrative action.
+// The original Horizons migration reset superuser credentials from env vars
+// whenever it ran. Restoring a backup must not silently rotate credentials.
+// Keep the filename for migration history; create the first superuser through
+// the PocketBase CLI or the private local installer, never public signup.
 migrate((app) => {
-    const email = $os.getenv("PB_SUPERUSER_EMAIL")
-
-    // The migration re-runs after a backup restore; creating the already existing
-    // superuser again fails the whole PocketBase boot and crash-loops the sandbox.
-    // Find-or-create, then always set the password, so a re-run converges on the
-    // current credentials instead of keeping stale ones.
-    let record
-
-    try {
-        record = app.findAuthRecordByEmail("_superusers", email)
-    } catch {
-        record = new Record(app.findCollectionByNameOrId("_superusers"))
-        record.set("email", email)
-    }
-
-    record.set("password", $os.getenv("PB_SUPERUSER_PASSWORD"))
-
-    app.save(record)
-})
+  // No automatic privileged-account provisioning.
+}, (app) => {
+  // Rollback must not delete administrators.
+});
