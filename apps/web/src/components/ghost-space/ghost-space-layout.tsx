@@ -79,10 +79,10 @@ export function GhostSpaceLayout({
 					))}
 				</nav>
 				<div className="ghost-space-sidebar-foot">
-					<Link to={publicProfilePath} className="ghost-space-nav-item ghost-space-public">
+					{publicProfilePath && <Link to={publicProfilePath} className="ghost-space-nav-item ghost-space-public">
 						<ArrowUpRight size={15} strokeWidth={1.5} />
 						<span>View Public Profile</span>
-					</Link>
+					</Link>}
 					<button type="button" className="ghost-space-nav-item ghost-space-signout" onClick={onSignOut}>
 						<LogOut size={15} strokeWidth={1.5} />
 						<span>Sign out</span>
