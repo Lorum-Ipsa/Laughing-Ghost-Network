@@ -29,3 +29,5 @@ The remaining applied versions are recorded here:
 | `20261108100006` | `phase1_projects_workspace` | [Workspace](../projects-workspace.sql), [collaboration](../projects-collaboration.sql), [planning](../projects-planning.sql) |
 
 Each row records a single development migration assembled from its linked SQL files in order. Do not replay them on the initialized development project. All 95 automated SQL assertions passed in rollback-only fixtures against the applied schema. Browser and production release acceptance remain pending.
+
+Table Talks was installed on development as `20261108101201_phase1_table_talks_workspace` using [the workspace SQL](../table-talks-workspace.sql). The 13 rollback-only checks passed against the installed schema.

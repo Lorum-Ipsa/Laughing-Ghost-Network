@@ -177,3 +177,14 @@ export async function publicSupabaseProjects() {
   if(roleError&&roleError.code!=='PGRST205')throw roleError;
   return data.map(project=>({...project,roles:(roles??[]).filter(role=>role.project_id===project.id)}));
 }
+
+export async function publicSupabaseTableTalks() {
+  const api=publicApi();
+  if(!api)return [];
+  const {data,error}=await api.from('ghost_table_talks').select('id,title,summary,status,scheduled_at')
+    .in('status',['open','scheduled','in_progress','completed'])
+    .order('scheduled_at',{ascending:true,nullsFirst:false}).order('created_at',{ascending:false}).limit(100);
+  if(error?.code==='PGRST205')return [];
+  if(error)throw error;
+  return data;
+}

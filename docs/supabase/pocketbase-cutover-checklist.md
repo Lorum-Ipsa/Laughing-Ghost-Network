@@ -8,7 +8,7 @@ Supabase is the target runtime database. Remove each PocketBase path after its S
 | Research, Arsenal, Supabase article IDs | Supabase reads | Reconcile historical public work and URLs |
 | Published article translations and text attachments | Supabase code in draft PR | Apply materials SQL and verify browser reads and safe downloads. Historical imports and binary uploads are separate |
 | Homepage, directory fallback, sitemap, legacy article/profile IDs | Mixed or PocketBase | Import authorized public profiles and work, resolve old IDs and handles, then remove legacy reads |
-| Projects, Table Talks, participation | New Projects workflows use Supabase. Legacy Projects and Table Talks still have PocketBase paths | Reconcile and import historical Projects, verify links, then remove legacy readers. Migrate Table Talks and its participation separately |
+| Projects, Table Talks, participation | New Projects and Table Talks workflows use Supabase. Historical libraries still have PocketBase paths | Reconcile and import historical Projects, verify links, then remove legacy readers. Migrate Table Talks and its participation separately |
 | Collaboration, notifications, legacy account/admin and remaining operations | Legacy or pending | Replace data access with Supabase and verify role boundaries |
 | Codespaces startup, CI preview, PocketBase package and clients | Legacy runtime remains | Use a disposable Supabase-backed preview and remove PocketBase startup and dependencies after route parity |
 

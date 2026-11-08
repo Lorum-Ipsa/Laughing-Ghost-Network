@@ -642,6 +642,171 @@ export type Database = {
           referencedColumns: ["id"]
         }]
       }
+      ghost_table_talks: {
+        Row: {
+          id: string
+          profile_id: string
+          title: string
+          summary: string
+          status: string
+          scheduled_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          profile_id: string
+          title: string
+          summary?: string
+          status?: string
+          scheduled_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          profile_id?: string
+          title?: string
+          summary?: string
+          status?: string
+          scheduled_at?: string | null
+          created_at?: string
+        }
+        Relationships: [{
+          foreignKeyName: "ghost_table_talks_profile_id_fkey"
+          columns: ["profile_id"]
+          isOneToOne: false
+          referencedRelation: "ghost_profiles"
+          referencedColumns: ["id"]
+        }]
+      }
+      ghost_table_talk_members: {
+        Row: {
+          talk_id: string
+          profile_id: string
+          role: string
+        }
+        Insert: {
+          talk_id: string
+          profile_id: string
+          role?: string
+        }
+        Update: {
+          talk_id?: string
+          profile_id?: string
+          role?: string
+        }
+        Relationships: [{
+          foreignKeyName: "ghost_table_talk_members_talk_id_fkey"
+          columns: ["talk_id"]
+          isOneToOne: false
+          referencedRelation: "ghost_table_talks"
+          referencedColumns: ["id"]
+        }, {
+          foreignKeyName: "ghost_table_talk_members_profile_id_fkey"
+          columns: ["profile_id"]
+          isOneToOne: false
+          referencedRelation: "ghost_profiles"
+          referencedColumns: ["id"]
+        }]
+      }
+      ghost_table_talk_materials: {
+        Row: {
+          talk_id: string
+          objectives: string
+          scenario: string
+          timeline: string
+          injects: string
+          evidence: string
+          decision_points: string
+        }
+        Insert: {
+          talk_id: string
+          objectives?: string
+          scenario?: string
+          timeline?: string
+          injects?: string
+          evidence?: string
+          decision_points?: string
+        }
+        Update: {
+          talk_id?: string
+          objectives?: string
+          scenario?: string
+          timeline?: string
+          injects?: string
+          evidence?: string
+          decision_points?: string
+        }
+        Relationships: [{
+          foreignKeyName: "ghost_table_talk_materials_talk_id_fkey"
+          columns: ["talk_id"]
+          isOneToOne: true
+          referencedRelation: "ghost_table_talks"
+          referencedColumns: ["id"]
+        }]
+      }
+      ghost_table_talk_debriefs: {
+        Row: {
+          talk_id: string
+          body: string
+        }
+        Insert: {
+          talk_id: string
+          body: string
+        }
+        Update: {
+          talk_id?: string
+          body?: string
+        }
+        Relationships: [{
+          foreignKeyName: "ghost_table_talk_debriefs_talk_id_fkey"
+          columns: ["talk_id"]
+          isOneToOne: true
+          referencedRelation: "ghost_table_talks"
+          referencedColumns: ["id"]
+        }]
+      }
+      ghost_table_talk_decisions: {
+        Row: {
+          id: string
+          talk_id: string
+          profile_id: string
+          point: string
+          decision: string
+          rationale: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          talk_id: string
+          profile_id: string
+          point: string
+          decision: string
+          rationale?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          talk_id?: string
+          profile_id?: string
+          point?: string
+          decision?: string
+          rationale?: string
+          created_at?: string
+        }
+        Relationships: [{
+          foreignKeyName: "ghost_table_talk_decisions_talk_id_fkey"
+          columns: ["talk_id"]
+          isOneToOne: false
+          referencedRelation: "ghost_table_talks"
+          referencedColumns: ["id"]
+        }, {
+          foreignKeyName: "ghost_table_talk_decisions_profile_id_fkey"
+          columns: ["profile_id"]
+          isOneToOne: false
+          referencedRelation: "ghost_profiles"
+          referencedColumns: ["id"]
+        }]
+      }
       ghost_profiles: {
         Row: {
           available_for_work: boolean

@@ -1,4 +1,6 @@
 import type { Route } from './+types/table-talks';
+import { Link } from 'react-router';
+import { publicSupabaseTableTalks } from '@/lib/supabase-public.server';
 import { seo } from '@/lib/seo';
 import { getPublicWork } from '@/lib/network.server';
 import { librarySections } from '@/data/navigation';
@@ -16,13 +18,31 @@ export function meta({ matches, location }: Route.MetaArgs) {
 }
 
 export async function loader() {
-  return { work: (await getPublicWork()).filter(work => (section.kinds as readonly string[]).includes(work.kind)) };
+  const [talks,legacy]=await Promise.all([
+    publicSupabaseTableTalks(),getPublicWork().catch(()=>null),
+  ]);
+  return {
+    talks,work:(legacy??[]).filter(work=>(section.kinds as readonly string[]).includes(work.kind)),
+    legacyUnavailable:legacy===null,
+  };
 }
 
 export default function TableTalks({ loaderData }: Route.ComponentProps) {
   return (
     <main>
-      <PageHeading {...section} action={{ to: '/contribute', label: 'Propose an exercise' }} />
+      <PageHeading {...section} action={{ to: '/ghost-space?section=table-talks', label: 'Draft an exercise' }} />
+      <section className="rail">
+        <h2>Community exercises</h2>
+        {loaderData.talks.length===0&&<p>No published exercises in the new workspace yet.</p>}
+        <ul className="gs-card-list">{loaderData.talks.map(talk=><li className="dashboard-panel" key={talk.id}>
+          <h3>{talk.title}</h3><p>{talk.summary}</p><p>{talk.status.replaceAll('_',' ')}</p>
+          {talk.scheduled_at&&<p><time dateTime={talk.scheduled_at}>
+            {new Date(talk.scheduled_at).toLocaleString('en-US',{timeZone:'UTC',timeZoneName:'short'})}
+          </time></p>}
+          <Link to={`/ghost-space?section=table-talks&talk=${talk.id}`}>Open in Ghost Space</Link>
+        </li>)}</ul>
+      </section>
+      {loaderData.legacyUnavailable&&<p className="rail" role="status">The historical exercise library is temporarily unavailable.</p>}
       <TableTalksLibrary work={loaderData.work} />
     </main>
   );
