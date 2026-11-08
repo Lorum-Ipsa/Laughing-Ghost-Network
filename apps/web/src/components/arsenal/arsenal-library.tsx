@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router';
 import { artifactPlatforms, artifactTools, workSearchText } from '@/lib/work-search';
-import { Search, X, SlidersHorizontal, ArrowUpRight } from 'lucide-react';
+import { Search, X, SlidersHorizontal } from 'lucide-react';
 import { WorkCard, type WorkCardMeta } from '@/components/work-card';
 import { SearchableMultiSelect } from '@/components/ghosts/searchable-multi-select';
 import { ALL_SPECIALTIES } from '@/data/specialties';
@@ -200,15 +199,10 @@ export function ArsenalLibrary({ work, allWork }: { work: Work[]; allWork: Work[
       {!results.length && (
         <div className="empty-state">
           <p>No artifact matches these criteria.</p>
-          {activeCount > 0
-            ? <button type="button" onClick={reset} style={{ color: 'hsl(var(--primary))', textDecoration: 'underline', background: 'none', border: 0, cursor: 'pointer' }}>Clear all filters</button>
-            : <Link to="/contribute">Share an artifact</Link>}
+          {activeCount > 0 && <button type="button" onClick={reset} style={{ color: 'hsl(var(--primary))', textDecoration: 'underline', background: 'none', border: 0, cursor: 'pointer' }}>Clear all filters</button>}
         </div>
       )}
       <p className="sample-note">Artifact Type covers the full field — {ARSENAL_TYPES.length} types from detection rules and hunting queries to hardening guides, adversary emulation plans, and validation harnesses. Every filter is searchable and supports multiple selections; the taxonomy grows with what members contribute. Validation status tracks each artifact's lifecycle from Draft through Tested and Community/Maintainer Validated to Deprecated. Related artifacts link each piece to the author's other work across the network.</p>
-      <div style={{ marginTop: 34 }}>
-        <Link className="text-link" to="/contribute">Propose an artifact <ArrowUpRight size={16} /></Link>
-      </div>
     </section>
   );
 }

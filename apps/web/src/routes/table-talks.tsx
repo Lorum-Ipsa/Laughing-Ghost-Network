@@ -1,5 +1,4 @@
 import type { Route } from './+types/table-talks';
-import { Link } from 'react-router';
 import { publicSupabaseTableTalks } from '@/lib/supabase-public.server';
 import { seo } from '@/lib/seo';
 import { getPublicWork } from '@/lib/network.server';
@@ -30,7 +29,7 @@ export async function loader() {
 export default function TableTalks({ loaderData }: Route.ComponentProps) {
   return (
     <main>
-      <PageHeading {...section} action={{ to: '/ghost-space?section=table-talks', label: 'Draft an exercise' }} />
+      <PageHeading {...section} />
       <section className="rail">
         <h2>Community exercises</h2>
         {loaderData.talks.length===0&&<p>No published exercises in the new workspace yet.</p>}
@@ -39,7 +38,6 @@ export default function TableTalks({ loaderData }: Route.ComponentProps) {
           {talk.scheduled_at&&<p><time dateTime={talk.scheduled_at}>
             {new Date(talk.scheduled_at).toLocaleString('en-US',{timeZone:'UTC',timeZoneName:'short'})}
           </time></p>}
-          <Link to={`/ghost-space?section=table-talks&talk=${talk.id}`}>Open in Ghost Space</Link>
         </li>)}</ul>
       </section>
       {loaderData.legacyUnavailable&&<p className="rail" role="status">The historical exercise library is temporarily unavailable.</p>}

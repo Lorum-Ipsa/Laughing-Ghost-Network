@@ -27,7 +27,7 @@ export async function loader() {
 export default function Research({ loaderData }: Route.ComponentProps) {
   return (
     <main>
-      <PageHeading {...section} action={{ to: '/contribute', label: 'Share research' }} />
+      <PageHeading {...section} />
       <LibraryShowcase library="research"/><ResearchLibrary work={loaderData.work} allWork={loaderData.allWork} />
     </main>
   );

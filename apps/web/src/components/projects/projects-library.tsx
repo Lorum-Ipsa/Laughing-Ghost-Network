@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router';
-import { Search, X, SlidersHorizontal, ArrowUpRight } from 'lucide-react';
+import { Search, X, SlidersHorizontal } from 'lucide-react';
 import { ProjectCard } from '@/components/projects/project-card';
 import { SearchableMultiSelect } from '@/components/ghosts/searchable-multi-select';
 import { ALL_SPECIALTIES } from '@/data/specialties';
@@ -262,15 +261,10 @@ export function ProjectsLibrary({ work, contributorCounts }: { work: Work[]; con
       {!results.length && (
         <div className="empty-state">
           <p>No {tab === 'community' ? 'community contributions' : 'projects'} match these criteria.</p>
-          {activeCount > 0
-            ? <button type="button" onClick={reset} style={{ color: 'hsl(var(--primary))', textDecoration: 'underline', background: 'none', border: 0, cursor: 'pointer' }}>Clear all filters</button>
-            : <Link to="/contribute">Propose a project</Link>}
+          {activeCount > 0 && <button type="button" onClick={reset} style={{ color: 'hsl(var(--primary))', textDecoration: 'underline', background: 'none', border: 0, cursor: 'pointer' }}>Clear all filters</button>}
         </div>
       )}
       <p className="sample-note">Projects separate discovery from participation. Lifecycle status (Proposed → Recruiting → Active → Paused → Complete → Archived) is independent of publication. Every filter is searchable and supports multiple selections; the taxonomy grows with what members contribute. Contributor counts reflect recorded participation. No popularity rankings — only chronological order.</p>
-      <div style={{ marginTop: 34 }}>
-        <Link className="text-link" to="/contribute">Propose a project <ArrowUpRight size={16} /></Link>
-      </div>
     </section>
   );
 }

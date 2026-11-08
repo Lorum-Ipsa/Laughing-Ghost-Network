@@ -1,5 +1,4 @@
 import type { Route } from './+types/projects';
-import { Link } from 'react-router';
 import { publicSupabaseProjects } from '@/lib/supabase-public.server';
 import { seo } from '@/lib/seo';
 import { getPublicWork, getProjectContributorCounts } from '@/lib/network.server';
@@ -34,7 +33,6 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
         eyebrow="BUILD TOGETHER"
         title="Projects"
         description="Open workstreams, concrete deliverables, and community contributions. Find a topic, propose a method, build with other Ghosts."
-        action={{ to: '/ghost-space?section=projects', label: 'Start a project' }}
       />
       <section className="rail">
         <h2>Community projects</h2>
@@ -44,9 +42,6 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
           <p>{project.summary}</p>
           <p>{project.status==='completed'?'Completed':project.recruiting?'Recruiting':'Active'}</p>
           {project.roles.length>0&&<p>Open roles · {project.roles.map(role=>role.title).join(', ')}</p>}
-          <Link to={`/ghost-space?section=projects&project=${project.id}`}>
-            {project.status==='active'&&project.recruiting?'Open project and request to join':'Open project in Ghost Space'}
-          </Link>
         </li>)}</ul>
       </section>
       {loaderData.legacyUnavailable&&<p className="rail" role="status">The historical Projects library is temporarily unavailable.</p>}

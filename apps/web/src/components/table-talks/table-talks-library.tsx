@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router';
-import { Search, X, SlidersHorizontal, ArrowUpRight } from 'lucide-react';
+import { Search, X, SlidersHorizontal } from 'lucide-react';
 import { ExerciseCard } from '@/components/table-talks/exercise-card';
 import { SearchableMultiSelect } from '@/components/ghosts/searchable-multi-select';
 import { ALL_SPECIALTIES } from '@/data/specialties';
@@ -215,15 +214,10 @@ export function TableTalksLibrary({ work }: { work: Work[] }) {
       {!results.length && (
         <div className="empty-state">
           <p>No exercise matches these criteria.</p>
-          {activeCount > 0
-            ? <button type="button" onClick={reset} style={{ color: 'hsl(var(--primary))', textDecoration: 'underline', background: 'none', border: 0, cursor: 'pointer' }}>Clear all filters</button>
-            : <Link to="/contribute">Propose an exercise</Link>}
+          {activeCount > 0 && <button type="button" onClick={reset} style={{ color: 'hsl(var(--primary))', textDecoration: 'underline', background: 'none', border: 0, cursor: 'pointer' }}>Clear all filters</button>}
         </div>
       )}
       <p className="sample-note">Table Talks is where the network practices making decisions. Every filter is searchable and supports multiple selections; the taxonomy grows with what members contribute. Exercise lifecycle status (Draft → Open → Scheduled → Completed → Archived) is independent of publication. No popularity rankings — only chronological order and a debrief.</p>
-      <div style={{ marginTop: 34 }}>
-        <Link className="text-link" to="/contribute">Propose an exercise <ArrowUpRight size={16} /></Link>
-      </div>
     </section>
   );
 }

@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router';
 import { workIdentifiers, workSearchText } from '@/lib/work-search';
-import { Search, X, SlidersHorizontal, ArrowUpRight } from 'lucide-react';
+import { Search, X, SlidersHorizontal } from 'lucide-react';
 import { WorkCard, type WorkCardMeta } from '@/components/work-card';
 import { SearchableMultiSelect } from '@/components/ghosts/searchable-multi-select';
 import { ALL_SPECIALTIES } from '@/data/specialties';
@@ -263,15 +262,10 @@ export function ResearchLibrary({ work, allWork }: { work: Work[]; allWork: Work
       {!results.length && (
         <div className="empty-state">
           <p>No research matches these criteria.</p>
-          {activeCount > 0
-            ? <button type="button" onClick={reset} style={{ color: 'hsl(var(--primary))', textDecoration: 'underline', background: 'none', border: 0, cursor: 'pointer' }}>Clear all filters</button>
-            : <Link to="/contribute">Share research</Link>}
+          {activeCount > 0 && <button type="button" onClick={reset} style={{ color: 'hsl(var(--primary))', textDecoration: 'underline', background: 'none', border: 0, cursor: 'pointer' }}>Clear all filters</button>}
         </div>
       )}
       <p className="sample-note">Research Type is separated from Domain/Specialty. Domains cover the full cybersecurity field — {ALL_SPECIALTIES.length} specialties plus skills, tools, platforms, industries, ATT&CK techniques, and CVE/CWE identifiers collected from member contributions. Every filter is searchable and supports multiple selections; the taxonomy grows with what members contribute. Related artifacts link each piece of research to the author's other work across the network.</p>
-      <div style={{ marginTop: 34 }}>
-        <Link className="text-link" to="/contribute">Share research <ArrowUpRight size={16} /></Link>
-      </div>
     </section>
   );
 }

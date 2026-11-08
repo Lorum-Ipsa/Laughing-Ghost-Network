@@ -80,6 +80,13 @@ jobs:
           for route in research arsenal code login projects table-talks; do
             curl --fail --silent --show-error "$origin/$route" --output /dev/null
           done
+          for route in research arsenal projects table-talks; do
+            html=$(curl --fail --silent --show-error "$origin/$route")
+            if printf '%s' "$html" | grep -E 'href="/ghost-space\?section=(projects|table-talks)|>(Share research|Share an artifact|Propose an artifact|Propose a project|Propose an exercise|Start a project|Draft an exercise)([[:space:]]|<)' >/dev/null; then
+              echo "Member action found on public /$route"
+              exit 1
+            fi
+          done
           curl --fail --silent --show-error "$origin/lgn-push-sw.js" --output "$RUNNER_TEMP/lgn-push-sw.js"
           node --check "$RUNNER_TEMP/lgn-push-sw.js"
           curl --fail --silent --show-error "$origin/research" | grep -F 'href="/work/showcase-cloud-trust-paths"' >/dev/null
