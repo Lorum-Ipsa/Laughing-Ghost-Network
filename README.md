@@ -10,7 +10,8 @@ LGN emphasizes responsible publication, demonstrated work, useful collaboration,
 
 - [Run the app in desktop VS Code + GitHub Codespaces](docs/codespaces-preview.md)
 - [Test the upgraded profile and contributions](docs/supabase/profile-contributions-acceptance.md)
-- [Test new handles and reviewer moderation](docs/supabase/handle-moderation-acceptance.md)
+- [Test double-slash handles and reviewer moderation](docs/supabase/handle-moderation-acceptance.md)
+- [Rules-bot screening and human escalation policy](docs/supabase/automated-moderation-policy.md)
 - [Normal registration and verification test](docs/supabase/normal-registration-test.md)
 - [Supabase architecture and database migration status](docs/supabase/README.md)
 - [Identity security: 23 rollback-only checks](docs/supabase/security-acceptance.md)
@@ -26,7 +27,7 @@ LGN emphasizes responsible publication, demonstrated work, useful collaboration,
 
 The source is a Bun-workspace monorepo with React/React Router/TypeScript/Tailwind in `apps/web`.
 
-**Supabase Auth and PostgreSQL RLS** back the normal visitor account flow and Ghost Space. Public profiles are explicitly selected from Supabase for the directory and the individual Ghost page. The new `ghost_contributions` table supports private drafting and immutable revision snapshots. Authorized reviewers can now request revisions, reject, or publish with an audit trail. Persistent handles support mixed case and URL-safe punctuation with case-insensitive, permanent reservation.
+**Supabase Auth and PostgreSQL RLS** back the normal visitor account flow and Ghost Space. Public profiles are explicitly selected from Supabase for the directory and the individual Ghost page. The new `ghost_contributions` table supports private drafting and immutable revision snapshots. Authorized reviewers can now request revisions, reject, or publish with an audit trail. Persistent handles support mixed case, paired `//` and approved punctuation. A deterministic rules bot screens each submitted version, while rejection and publication remain human decisions.
 
 The old **PocketBase backend** remains under `apps/pocketbase` as a migration/rollback reference and currently supplies some legacy public content. Existing PocketBase data was **not imported**. The public directory can display both Supabase and legacy Ghost profiles.
 
