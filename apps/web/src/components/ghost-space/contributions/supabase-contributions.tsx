@@ -14,6 +14,8 @@ export type GhostContribution = Omit<BaseRow,'owner_id'|'deleted_at'>;
 type Revision = Omit<Database['public']['Tables']['ghost_contribution_revisions']['Row'],'owner_id'>;
 type ReviewNote = Pick<Database['public']['Tables']['ghost_contribution_reviews']['Row'],
   'id'|'contribution_id'|'action'|'note'|'created_at'>;
+type TriageSummary = Pick<Database['public']['Tables']['ghost_contribution_triage']['Row'],
+  'contribution_id'|'version'|'recommendation'|'resolution'|'policy_version'>;
 type Draft = Pick<GhostContribution,'kind'|'title'|'language'|'domain'|'summary'|'body'|'tags'|'source_url'|'code'>;
 type WorkState = 'draft'|'submitted'|'revision_requested'|'rejected'|'published'|'archived';
 type Tab = 'drafts'|'in_review'|'needs_revision'|'published'|'archived';
@@ -77,6 +79,7 @@ type Props={profile:GhostIdentity;userId:string};
 export function SupabaseContributions({profile,userId}:Props) {
   const [items,setItems]=useState<GhostContribution[]>([]);
   const [reviewNotes,setReviewNotes]=useState<Record<string,ReviewNote>>({});
+  const [triage,setTriage]=useState<Record<string,TriageSummary>>({});
   const [loading,setLoading]=useState(true);
   const [tab,setTab]=useState<Tab>('drafts');
   const [editing,setEditing]=useState<GhostContribution|null|undefined>(undefined);
@@ -100,6 +103,13 @@ export function SupabaseContributions({profile,userId}:Props) {
         setItems((data||[]) as GhostContribution[]);
         const ids=(data||[]).map(item=>item.id);
         if(ids.length){
+          const {data:screenings,error:screeningError}=await api.from('ghost_contribution_triage')
+            .select('contribution_id,version,recommendation,resolution,policy_version')
+            .in('contribution_id',ids);
+          if(screeningError)throw screeningError;
+          const map:Record<string,TriageSummary>={};
+          for(const entry of screenings||[])map[entry.contribution_id+':'+entry.version]=entry;
+          if(alive)setTriage(map);
           const {data:notes,error:notesError}=await api.from('ghost_contribution_reviews')
             .select('id,contribution_id,action,note,created_at').in('contribution_id',ids)
             .order('created_at',{ascending:false});
@@ -107,7 +117,7 @@ export function SupabaseContributions({profile,userId}:Props) {
           const latest:Record<string,ReviewNote>={};
           for(const note of notes||[]) if(!latest[note.contribution_id])latest[note.contribution_id]=note;
           if(alive)setReviewNotes(latest);
-        } else setReviewNotes({});
+        } else {setReviewNotes({});setTriage({});}
       }catch(e){if(alive)setError(e instanceof Error?e.message:'Could not load contributions.');}
       finally{if(alive)setLoading(false);}
     })();
@@ -136,7 +146,13 @@ export function SupabaseContributions({profile,userId}:Props) {
     if(error)throw error;
     setItems((data||[]) as GhostContribution[]);
     const ids=(data||[]).map(item=>item.id);
-    if(!ids.length) {setReviewNotes({});return;}
+    if(!ids.length) {setReviewNotes({});setTriage({});return;}
+    const {data:screenings,error:screeningError}=await supabaseBrowser().from('ghost_contribution_triage')
+      .select('contribution_id,version,recommendation,resolution,policy_version').in('contribution_id',ids);
+    if(screeningError)throw screeningError;
+    const map:Record<string,TriageSummary>={};
+    for(const entry of screenings||[])map[entry.contribution_id+':'+entry.version]=entry;
+    setTriage(map);
     const {data:notes,error:notesError}=await supabaseBrowser().from('ghost_contribution_reviews')
       .select('id,contribution_id,action,note,created_at').in('contribution_id',ids)
       .order('created_at',{ascending:false});
@@ -224,6 +240,15 @@ export function SupabaseContributions({profile,userId}:Props) {
           <p className="muted-note">Version {item.version} · Updated {new Date(item.updated_at).toLocaleDateString()}</p>
         </div>
       </div><p>{item.summary||'Add your summary before submitting for review.'}</p>
+      {item.status==='submitted'&&<div className="callout">
+        <strong>Automated screening: </strong>
+        {triage[item.id+':'+item.version]?.resolution==='cleared' ? 'Human investigation cleared' :
+         triage[item.id+':'+item.version]?.recommendation==='investigate' ? 'Further human investigation required' :
+         triage[item.id+':'+item.version]?.recommendation==='reject_candidate' ? 'Possible duplicate — human review required' :
+         triage[item.id+':'+item.version]?.recommendation==='human_review' ? 'Routine human review' :
+         'Screening pending'}
+        <p className="muted-note">Bot recommendations are not decisions. Only authorized humans can reject or publish your work.</p>
+      </div>}
       {reviewNotes[item.id]&&<div className="callout" role="note">
         <strong>Review decision: {reviewNotes[item.id].action.replaceAll('_',' ')}</strong>
         {reviewNotes[item.id].note&&<p style={{whiteSpace:'pre-wrap'}}>{reviewNotes[item.id].note}</p>}
