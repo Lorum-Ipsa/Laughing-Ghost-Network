@@ -63,7 +63,7 @@ jobs:
           HOST: 127.0.0.1
           PORT: '3100'
         run: |
-          npm run start --workspace web > "$RUNNER_TEMP/lgn-web-smoke.log" 2>&1 &
+          node server.cjs > "$RUNNER_TEMP/lgn-web-smoke.log" 2>&1 &
           app_pid=$!
           trap 'kill "$app_pid" 2>/dev/null || true' EXIT
           origin=http://127.0.0.1:3100
