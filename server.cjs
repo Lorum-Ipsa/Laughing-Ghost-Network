@@ -9,5 +9,7 @@ const build = resolve(__dirname, 'dist/apps/web/server/index.js');
 
 // Start the existing React Router server in this process so the hosting
 // supervisor can manage the HTTP listener. Preserve its PORT and HOST.
+// Match the workspace start script so the server can find public files.
+process.chdir(resolve(__dirname, 'apps/web'));
 process.argv = [process.execPath, entry, build];
 requireFromWeb(entry);
