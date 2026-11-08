@@ -10,8 +10,7 @@ export function LibraryShowcase({library}:{library:'research'|'arsenal'}){
   return <section className="rail lgn-showcase" aria-labelledby="library-showcase-heading">
     <div className="lgn-showcase-heading">
       <Icon size={25} aria-hidden="true"/>
-      <div><span className="eyebrow">EDUCATIONAL EXAMPLES</span>
-        <h2 id="library-showcase-heading">{research?'Research showcase':'Arsenal showcase'}</h2>
+      <div><h2 id="library-showcase-heading">Examples of use</h2>
         <p>{research?'Explore examples of a research method and an investigation writeup.':'Inspect a sample detection and a lab utility before browsing member artifacts.'}</p>
       </div>
     </div>
