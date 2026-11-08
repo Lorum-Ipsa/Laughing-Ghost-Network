@@ -133,7 +133,7 @@ export function SupabaseGhostSpaceDashboard() {
               </div>
               <div className="form-panel"><h2>What's available now</h2>
                 <p>Registration, email confirmation, the complete Ghost profile editor, and contribution drafting/revision history are connected to Supabase.</p>
-                <p className="muted-note">Contributions support private drafts and submission for review. Review queue and publishing are now available to authorized reviewers. Projects, Table Talks, notifications, custom avatar uploads and advanced settings remain in development.</p>
+                <p className="muted-note">Contributions support private drafts, direct publication, and deletion. A screening concern sends work to the Review queue. Projects, Table Talks, notifications, custom avatar uploads and advanced settings remain in development.</p>
               </div>
             </div>
             <div className="gs-grid-side">

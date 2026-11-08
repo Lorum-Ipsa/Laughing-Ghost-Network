@@ -9,9 +9,11 @@ import { TranslateBar } from '@/components/work/translate-bar';
 import type { Translation, Work } from '@/lib/network';
 
 export async function loader({ params }: Route.LoaderArgs) {
-  const supabaseWork=await publicSupabaseContribution(params.id);
-  if(supabaseWork) {
-    return {work:supabaseWork,translations:[],related:[],networkRelated:[],contributorCount:0};
+  // Supabase IDs must never fall through to PocketBase, including after deletion.
+  if (/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(params.id)) {
+    const work=await publicSupabaseContribution(params.id);
+    if(!work)throw new Response('Contribution not found', {status:404});
+    return {work,translations:[],related:[],networkRelated:[],contributorCount:0};
   }
   const work = await getWork(params.id);
   const isProject = work.kind === 'project';

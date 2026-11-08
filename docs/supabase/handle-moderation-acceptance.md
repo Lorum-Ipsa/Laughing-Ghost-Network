@@ -26,6 +26,8 @@ Use a private Codespaces preview and the dedicated `lgn-development` project. Th
 6. Repeat the held submission with a new fixture. As B, record a clearance reason and confirm it stays private. Then make a separate publish decision and confirm the work becomes visible to the visitor.
 7. As B, submit a synthetic held fixture of your own. Confirm it is visible in the queue and the UI offers no action to review your own submission.
 
+8. As A, delete a published fixture. Confirm the item disappears from Contributions, the Ghost profile, and its Research or Arsenal listing. The direct public article URL should return 404. Repeat with a held fixture and confirm it disappears from B's review queue.
+
 Do not grant reviewer access to a real account for testing. Provision and revoke a dedicated test account's role only with explicit maintainer authorization.
 
 ## Database regression suites

@@ -91,6 +91,24 @@ function asLegacyWork(row:PublicContribution,profile:GhostProfile):Work {
     expand:{author:profile},
   };
 }
+export async function publicSupabaseWork():Promise<Work[]> {
+  const api=publicApi();
+  if(!api)return [];
+  const work:Work[]=[];
+  const pageSize=100;
+  for(let offset=0;;offset+=pageSize){
+    const {data,error}=await api.from('ghost_contributions')
+      .select(`${WORK_FIELDS},ghost_profiles!ghost_contributions_profile_id_fkey(${PROFILE_FIELDS})`)
+      .eq('status','published').order('published_at',{ascending:false}).order('id')
+      .range(offset,offset+pageSize-1);
+    if(error)throw error;
+    for(const {ghost_profiles:author,...row} of data){
+      if(author)work.push(asLegacyWork(row,asLegacyProfile(author)));
+    }
+    if(data.length<pageSize)return work;
+  }
+}
+
 export async function publicSupabaseWorkByProfile(profile:GhostProfile):Promise<Work[]> {
   const api=publicApi();if(!api)return [];
   const {data,error}=await api.from('ghost_contributions').select(WORK_FIELDS)

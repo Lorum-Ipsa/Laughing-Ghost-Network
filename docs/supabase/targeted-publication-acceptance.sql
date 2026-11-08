@@ -92,6 +92,60 @@ update public.ghost_contributions set code='Sanitized sample',status='submitted'
 insert into qa_bot_out select 'a corrected submission publishes without another approval',
   count(*)=1 and bool_and(status='published' and version=3)
 from public.ghost_contributions where title='QA secret';
+select public.delete_ghost_contribution(
+  (select id from public.ghost_contributions where title='QA ordinary research'),1);
+insert into qa_bot_out
+select 'owner no longer sees deleted published work',count(id)=0
+from public.ghost_contributions where title='QA ordinary research';
+set local role anon;
+insert into qa_bot_out
+select 'public no longer sees deleted published work',count(id)=0
+from public.ghost_contributions where title='QA ordinary research';
+insert into qa_bot_out values ('anonymous callers cannot invoke deletion',
+  not has_function_privilege('anon','public.delete_ghost_contribution(uuid,integer)','execute'));
+set local role authenticated;
+select set_config('request.jwt.claim.sub',(select id::text from qa_bot_users where k='other'),true);
+do $qa$
+begin
+  perform public.delete_ghost_contribution(
+    (select min(id::text)::uuid from public.ghost_contributions where title='QA artifact'),2);
+  insert into qa_bot_out values ('another member cannot delete public work',false);
+exception when insufficient_privilege then
+  insert into qa_bot_out values ('another member cannot delete public work',true);
+end $qa$;
+select set_config('request.jwt.claim.sub',(select id::text from qa_bot_users where k='a'),true);
+do $qa$
+begin
+  perform public.delete_ghost_contribution(
+    (select id from public.ghost_contributions where title='QA secret'),null);
+  insert into qa_bot_out values ('missing version cannot delete work',false);
+exception when serialization_failure then
+  insert into qa_bot_out values ('missing version cannot delete work',true);
+end $qa$;
+insert into public.ghost_contributions(owner_id,profile_id,title,code,status)
+select id,(select id from public.ghost_profiles where handle='BotQA//Member'),
+  'QA delete held','-----BEGIN PRIVATE KEY----- fake marker','submitted'
+from qa_bot_users where k='a';
+do $qa$
+declare
+  work_id uuid;
+begin
+  select id into strict work_id from public.ghost_contributions where title='QA delete held';
+  insert into qa_bot_out values ('owner can delete held work and safely retry',
+    public.delete_ghost_contribution(work_id,1)
+    and public.delete_ghost_contribution(work_id,1));
+end $qa$;
+select set_config('request.jwt.claim.sub',(select id::text from qa_bot_users where k='r'),true);
+insert into qa_bot_out
+select 'deleted held work disappears from the review queue',count(id)=0
+from public.ghost_contributions where title='QA delete held';
+insert into qa_bot_out values ('members cannot write tombstones directly',
+  not has_column_privilege('authenticated','public.ghost_contributions','deleted_at','UPDATE'));
+reset role;
+insert into qa_bot_out
+select 'delete retains an internal tombstone and version history',count(*)=1
+from public.ghost_contributions c join public.ghost_contribution_revisions r on r.contribution_id=c.id
+where c.title='QA ordinary research' and c.deleted_at is not null;
 reset role;
 do $qa$ declare failed text;
 begin select string_agg(test,'; ') into failed from qa_bot_out where not passed;

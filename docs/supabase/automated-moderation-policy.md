@@ -14,6 +14,10 @@ LGN displays the type of concern without copying the matched text into the findi
 
 Existing queued contributions retain their historical findings. Authors can withdraw and resubmit them under the new policy. Previously recorded findings remain available as audit history.
 
+## Owner deletion
+
+An active owner can delete any contribution state, including published and held work. The action removes the contribution from public and workspace reads. The database retains a deletion timestamp, revision history and moderation records. The deletion endpoint requires the current version and rejects other members.
+
 ## Handling published code
 
 LGN renders source as escaped text inside the public article. Copy and plain-text downloads are available. LGN does not run submitted code, interpret it as HTML, or host executable attachments through this workflow. External citations remain separate links.

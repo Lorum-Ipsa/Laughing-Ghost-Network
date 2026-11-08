@@ -9,11 +9,15 @@
 ## 2. Ghost public identity
 **Implemented on feature branch; profile editor user-tested; paired-slash handle registration still needs browser acceptance.** Expanded profile sections, specialties/skills/tools, languages, location, availability, avatar templates, external links, public profile route and directory lookup. Paired `//` handles now have reversible, path-safe public URLs. Remaining: custom upload security, field-specific private visibility, verified external account ownership, production serving.
 
-## 3. Contribution publishing lifecycle
-**Author and reviewer workspaces implemented; two-member browser acceptance pending.** Draft/edit/submit/withdraw/archive/restore, immutable version history, RLS protections and 14 SQL regression assertions. Submission has no arbitrary character minimum: title plus a description, summary, code, or URL suffices. Reviewer feedback, approve/reject/request-revision, versioned review logging and public work rendering are implemented. An event-triggered rules bot now recommends human review, rejection or investigation; human clearance is required before publishing flagged work. Next: role-assignment admin UI, browser two-account acceptance, appeals/abuse reporting, attachment security and release workflow.
+## 3. Contributions
 
-## 4. Network functionality
-Migrate projects/tasks, Table Talks, moderation queues, community collaboration and notifications from historical PocketBase schemas. Preserve accessible, evidence-centered interfaces and published-original-language fidelity. Each requires its own reviewed authorization and audit model.
+The draft includes private drafts, direct publication, targeted review, version history, owner deletion and Supabase-backed Research and Arsenal listings. Deletion removes work from the workspace, review queue and public Supabase surfaces and retains internal audit history. The pending publication SQL and version guard require development rollout and two-account browser acceptance. Published content is locked for edits. Author revision of a published article, post-publication reporting and takedown, translations, and attachment handling are separate work.
+
+Historical PocketBase content has not been imported. Research and Arsenal read Supabase, so any historical listing entries need a verified data import to appear there. The homepage, sitemap, legacy public profile and article paths, and other public libraries still have legacy readers.
+
+## 4. Supabase cutover and remaining Ghost Space sections
+
+**Projects is next.** Migrate project records, ownership, membership, tasks, updates and participation to Supabase with role-based access. Cut over the dashboard and public Projects surfaces together. Then migrate Table Talks, collaboration, notifications, account settings and export, and the remaining admin and moderation workflows. Audit server loaders and browser clients for residual PocketBase access before removing the PocketBase preview service and dependency. Reconcile authorized historical records and URL mappings before retiring legacy readers.
 
 ## 5. Staging, operational security and continuity
 Resolve Supabase CLI migration baseline; add disposable end-to-end tests, hardened cookie/PKCE SSR sessions, reliable deployed staging and rollback, two-user permissions, rate limits, privacy notices and observed moderation behavior.

@@ -399,6 +399,10 @@ export type Database = {
     }
     Functions: {
       can_review_contributions: { Args: never; Returns: boolean }
+      delete_ghost_contribution: {
+        Args: { p_contribution_id: string; p_expected_version: number }
+        Returns: boolean
+      }
       review_ghost_contribution: {
         Args: {
           p_action: string

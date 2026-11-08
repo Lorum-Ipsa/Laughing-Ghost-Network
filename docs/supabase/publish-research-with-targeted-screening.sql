@@ -15,6 +15,17 @@ begin
     end if;
     new.version:=1;
   else
+    -- The owner-only RPC is the sole member write path to deleted_at.
+    if new.deleted_at is distinct from old.deleted_at then
+      if old.deleted_at is not null or new.deleted_at is null
+        or old.owner_id is distinct from (select auth.uid())
+        or not lgn_private.is_active_member()
+      then
+        raise exception 'Contribution deletion requires its active owner' using errcode='42501';
+      end if;
+      new.updated_at:=now();
+      return new;
+    end if;
     if old.status='published' or old.deleted_at is not null then
       raise exception 'Published/deleted work is locked for edits' using errcode='23514';
     end if;
@@ -96,3 +107,33 @@ begin
   )
   on conflict(contribution_id,version) do nothing;
 end $fn$;
+
+-- Keep the row and its revision and moderation records for audit. Existing
+-- read policies hide the tombstone from public, owner and review queues.
+create function public.delete_ghost_contribution(
+  p_contribution_id uuid, p_expected_version integer
+) returns boolean
+language plpgsql security definer set search_path='' as $fn$
+declare
+  target public.ghost_contributions%rowtype;
+begin
+  if (select auth.uid()) is null or not lgn_private.is_active_member() then
+    raise exception 'An active member account is required' using errcode='42501';
+  end if;
+
+  select * into target from public.ghost_contributions
+  where id=p_contribution_id and owner_id=(select auth.uid())
+  for update;
+  if not found then
+    raise exception 'Contribution is unavailable' using errcode='42501';
+  end if;
+  if target.version is distinct from p_expected_version then
+    raise exception 'Contribution changed; reload before deleting' using errcode='40001';
+  end if;
+  if target.deleted_at is not null then return true; end if;
+
+  update public.ghost_contributions set deleted_at=now() where id=target.id;
+  return true;
+end $fn$;
+revoke all on function public.delete_ghost_contribution(uuid,integer) from public,anon,authenticated;
+grant execute on function public.delete_ghost_contribution(uuid,integer) to authenticated;

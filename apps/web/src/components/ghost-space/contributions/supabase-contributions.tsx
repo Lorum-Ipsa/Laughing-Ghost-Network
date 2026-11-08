@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
+import { Link } from 'react-router';
 import { Plus, FileText, Eye, Save, Send, Archive, Undo2, History, X, RefreshCcw } from 'lucide-react';
-import { kindLabels, type WorkKind } from '@/lib/network';
+import { kindLabels, safeExternal, type WorkKind } from '@/lib/network';
 import { CONTENT_LANGUAGES } from '@/lib/languages';
 import type { GhostIdentity } from '@/lib/supabase-ghost-profile';
 import type { Database } from '@/lib/supabase.database.types';
@@ -58,6 +59,7 @@ function validateDraft(draft:Draft,target:WorkState):Draft {
   return next;
 }
 function Preview({item,onClose}:{item:GhostContribution,onClose:()=>void}) {
+  const source=safeExternal(item.source_url);
   return <div className="gs-overlay" role="dialog" aria-modal="true" aria-label="Contribution preview">
     <div className="gs-overlay-panel gs-preview">
       <header className="gs-overlay-head">
@@ -69,7 +71,7 @@ function Preview({item,onClose}:{item:GhostContribution,onClose:()=>void}) {
       <p className="gs-preview-summary">{item.summary}</p>
       <div className="gs-preview-body" style={{whiteSpace:'pre-wrap'}}>{item.body}</div>
       {item.code&&<pre className="code-block" style={{whiteSpace:'pre-wrap'}}>{item.code}</pre>}
-      {item.source_url&&<p><a href={item.source_url} target="_blank" rel="noreferrer">Open source reference</a></p>}
+      {source&&<p><a href={source} target="_blank" rel="noreferrer">Open source reference</a></p>}
       {item.tags&&<p className="muted-note">Tags: {item.tags}</p>}
       {item.status!=='published'&&<p className="muted-note">This contribution is currently private.</p>}
     </div>
@@ -87,6 +89,8 @@ export function SupabaseContributions({profile,userId}:Props) {
   const [preview,setPreview]=useState<GhostContribution|null>(null);
   const [revisionsFor,setRevisionsFor]=useState<GhostContribution|null>(null);
   const [revisions,setRevisions]=useState<Revision[]>([]);
+  const [deleting,setDeleting]=useState<GhostContribution|null>(null);
+  const [deleteError,setDeleteError]=useState('');
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
   const [notice,setNotice]=useState('');
@@ -206,6 +210,20 @@ export function SupabaseContributions({profile,userId}:Props) {
       setNotice(target==='archived'?'Contribution archived.':'Contribution returned to drafts.');
     } catch(e){setError(requestErrors(e));}finally{setBusy(false);}
   }
+  async function deleteContribution() {
+    if(!deleting||busy)return;
+    setBusy(true);setDeleteError('');setNotice('');
+    try {
+      const {error}=await supabaseBrowser().rpc('delete_ghost_contribution',{
+        p_contribution_id:deleting.id,
+        p_expected_version:deleting.version,
+      });
+      if(error)throw error;
+      setItems(current=>current.filter(item=>item.id!==deleting.id));
+      setDeleting(null);
+      setNotice('Contribution deleted.');
+    } catch(e){setDeleteError(requestErrors(e));}finally{setBusy(false);}
+  }
   async function showRevisions(item:GhostContribution) {
     setError('');setRevisionsFor(item);setRevisions([]);
     const {data,error}=await supabaseBrowser().from('ghost_contribution_revisions')
@@ -263,12 +281,15 @@ export function SupabaseContributions({profile,userId}:Props) {
         {item.status!=='published'&&<button type="button" className="button button-light"
           onClick={()=>begin(item)}>Edit</button>}
         <button type="button" className="gs-card-action" onClick={()=>{void showRevisions(item);}}><History size={14}/> History</button>
+        {item.status==='published'&&<Link className="gs-card-action" to={`/work/${item.id}`}>View public article</Link>}
         {item.status==='submitted'&&<button className="gs-card-action" type="button" disabled={busy}
           onClick={()=>{void transition(item,'draft');}}><Undo2 size={14}/> Withdraw to draft</button>}
         {['draft','revision_requested','rejected'].includes(item.status)&&<button className="gs-card-action" type="button" disabled={busy}
           onClick={()=>{void transition(item,'archived');}}><Archive size={14}/> Archive</button>}
         {item.status==='archived'&&<button className="gs-card-action" type="button" disabled={busy}
           onClick={()=>{void transition(item,'draft');}}><RefreshCcw size={14}/> Restore</button>}
+        <button className="gs-card-action" type="button" disabled={busy}
+          onClick={()=>{setDeleteError('');setDeleting(item);}}>Delete</button>
       </div>
     </li>)}</ul>}
     {editing!==undefined&&<div className="gs-overlay" role="dialog" aria-modal="true" aria-label="Edit contribution">
@@ -310,6 +331,19 @@ export function SupabaseContributions({profile,userId}:Props) {
           <button className="gs-card-action" type="button" onClick={()=>setEditing(undefined)} disabled={busy}>Cancel</button>
         </div>
       </form></div>}
+    {deleting&&<div className="gs-overlay" role="dialog" aria-modal="true" aria-labelledby="delete-contribution-title">
+      <div className="gs-overlay-panel gs-preview">
+        <h2 id="delete-contribution-title">Delete contribution?</h2>
+        <p>“{deleting.title||'Untitled contribution'}” will be removed from Ghost Space and any public listing. LGN retains its internal records.</p>
+        {deleteError&&<p className="status-message error-message" role="alert">{deleteError}</p>}
+        <div className="gs-builder-actions">
+          <button type="button" className="button button-outline" autoFocus disabled={busy}
+            onClick={()=>setDeleting(null)}>Cancel</button>
+          <button type="button" className="button button-light" disabled={busy}
+            onClick={()=>void deleteContribution()}>{busy?'Deleting…':'Delete contribution'}</button>
+        </div>
+      </div>
+    </div>}
     {preview&&<Preview item={preview} onClose={()=>setPreview(null)}/>}
     {revisionsFor&&<div className="gs-overlay" role="dialog" aria-modal="true" aria-label="Version history">
       <div className="gs-overlay-panel gs-preview"><header className="gs-overlay-head">

@@ -1,6 +1,6 @@
 import type { Route } from './+types/research';
 import { seo } from '@/lib/seo';
-import { getPublicWork } from '@/lib/network.server';
+import { publicSupabaseWork } from '@/lib/supabase-public.server';
 import { librarySections } from '@/data/navigation';
 import { RESEARCH_KINDS } from '@/data/research';
 import { PageHeading } from '@/components/page-heading';
@@ -17,7 +17,7 @@ export function meta({ matches, location }: Route.MetaArgs) {
 }
 
 export async function loader() {
-  const allWork = await getPublicWork();
+  const allWork = await publicSupabaseWork();
   const kinds = new Set(RESEARCH_KINDS);
   const work = allWork.filter((item) => kinds.has(item.kind));
   return { work, allWork };
