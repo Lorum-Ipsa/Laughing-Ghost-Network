@@ -1,9 +1,8 @@
 import type { Route } from './+types/research';
 import { seo } from '@/lib/seo';
-import { publicSupabaseWork } from '@/lib/supabase-public.server';
+import { publicWork } from '@/lib/supabase-public.server';
 import { librarySections } from '@/data/navigation';
 import { RESEARCH_KINDS } from '@/data/research';
-import { LibraryShowcase } from '@/components/library-showcase';
 import { PageHeading } from '@/components/page-heading';
 import { ResearchLibrary } from '@/components/research/research-library';
 
@@ -18,7 +17,7 @@ export function meta({ matches, location }: Route.MetaArgs) {
 }
 
 export async function loader() {
-  const allWork = await publicSupabaseWork();
+  const allWork = (await publicWork()).sort((a, b) => b.created.localeCompare(a.created));
   const kinds = new Set(RESEARCH_KINDS);
   const work = allWork.filter((item) => kinds.has(item.kind));
   return { work, allWork };
@@ -28,7 +27,7 @@ export default function Research({ loaderData }: Route.ComponentProps) {
   return (
     <main>
       <PageHeading {...section} />
-      <LibraryShowcase library="research"/><ResearchLibrary work={loaderData.work} allWork={loaderData.allWork} />
+      <ResearchLibrary work={loaderData.work} allWork={loaderData.allWork} />
     </main>
   );
 }

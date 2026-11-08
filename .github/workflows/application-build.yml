@@ -88,8 +88,12 @@ jobs:
           done
           curl --fail --silent --show-error "$origin/lgn-push-sw.js" --output "$RUNNER_TEMP/lgn-push-sw.js"
           node --check "$RUNNER_TEMP/lgn-push-sw.js"
-          curl --fail --silent --show-error "$origin/research" | grep -F 'href="/work/showcase-cloud-trust-paths"' >/dev/null
-          curl --fail --silent --show-error "$origin/arsenal" | grep -F 'href="/work/showcase-lsass-detection"' >/dev/null
+          html=$(curl --fail --silent --show-error "$origin/research")
+          printf '%s' "$html" | grep -F 'href="/work/showcase-cloud-trust-paths"' >/dev/null
+          printf '%s' "$html" | sed 's/<!-- -->//g' | grep -F '2 CONTRIBUTIONS · CHRONOLOGICAL ORDER' >/dev/null
+          html=$(curl --fail --silent --show-error "$origin/arsenal")
+          printf '%s' "$html" | grep -F 'href="/work/showcase-lsass-detection"' >/dev/null
+          printf '%s' "$html" | sed 's/<!-- -->//g' | grep -F '2 ARTIFACTS · CHRONOLOGICAL ORDER' >/dev/null
           curl --fail --silent --show-error "$origin/work/showcase-lsass-detection" | grep -F 'Educational demo artifact.' >/dev/null
           curl --fail --silent --show-error "$origin/projects" | grep -F 'href="/work/demo-detection-lab"' >/dev/null
           curl --fail --silent --show-error "$origin/table-talks" | grep -F 'href="/work/demo-cloud-incident"' >/dev/null
