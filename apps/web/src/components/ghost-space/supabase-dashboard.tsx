@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
-import { ArrowUpRight } from 'lucide-react';
+import { SupabaseDashboardHome } from '@/components/ghost-space/supabase-dashboard-home';
 import { useSupabaseAuth } from '@/hooks/use-supabase-auth';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { SupabaseProfileEditor } from '@/components/ghost-space/profile/supabase-profile-editor';
@@ -149,31 +149,7 @@ export function SupabaseGhostSpaceDashboard() {
           </form>
         </div>
       ) : section === 'dashboard' ? (
-        <section className="gs-dashboard">
-          <span className="eyebrow"><span className="tiny-dot"/> GHOST SPACE / DASHBOARD</span>
-          <h1>Welcome, {profile.display_name || profile.handle}<span className="accent-period">.</span></h1>
-          <p className="gs-section-lede">Your Ghost identity is now stored in Supabase. Your email is private and your handle is permanent.</p>
-          <div className="gs-grid">
-            <div className="gs-grid-main">
-              <div className="form-panel"><h2>Public Ghost identity</h2>
-                <p><strong>@{profile.handle}</strong></p>
-                <p>{profile.bio || 'Add a bio to tell the network about your practice.'}</p>
-                <Link className="button button-light" to="/ghost-space?section=profile">Edit my profile <ArrowUpRight size={15}/></Link>
-              </div>
-              <div className="form-panel"><h2>What's available now</h2>
-                <p>Registration, email confirmation, the complete Ghost profile editor, and contribution drafting/revision history are connected to Supabase.</p>
-                <p className="muted-note">Contributions support private drafts, direct publication, and deletion. A screening concern sends work to the Review queue. Projects supports briefs, membership requests, and tasks. Table Talks supports exercises, participant decisions and debriefs. Notifications brings workspace updates into a private inbox. Custom avatar uploads and advanced settings remain in development.</p>
-              </div>
-            </div>
-            <div className="gs-grid-side">
-              <div className="form-panel"><h2>Account status</h2>
-                <p>Email <strong>verified</strong></p>
-                <p>Profile <strong>active</strong></p>
-                <p className="muted-note">Ghost account details stay private; only the chosen profile fields are public.</p>
-              </div>
-            </div>
-          </div>
-        </section>
+        <SupabaseDashboardHome key={profile.id} profileId={profile.id} handle={profile.handle} displayName={profile.display_name} />
       ) : section === 'profile' ? (
         <SupabaseProfileEditor profile={profile} onSaved={(updated) => {
           setProfile(updated);

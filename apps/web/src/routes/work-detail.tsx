@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
 import type { Route } from './+types/work-detail';
+import { showcaseWork } from '@/data/library-showcases';
 import { seo } from '@/lib/seo';
 import { getWork, getTranslations, getRelatedWork, getRelatedByDomain, getContributorCount } from '@/lib/network.server';
 import { publicSupabaseContribution, publicSupabaseMaterials } from '@/lib/supabase-public.server';
@@ -12,6 +13,8 @@ import type { Translation } from '@/lib/network';
 const isSupabaseId = (id:string) => /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(id);
 
 export async function loader({ params }: Route.LoaderArgs) {
+  const example=showcaseWork.find(item=>item.id===params.id);
+  if(example)return {work:example,translations:[],attachments:[],related:[],networkRelated:[],contributorCount:0};
   // Supabase IDs must never fall through to PocketBase, including after deletion.
   if (isSupabaseId(params.id)) {
     const work=await publicSupabaseContribution(params.id);

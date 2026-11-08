@@ -119,12 +119,13 @@ export function SupabaseTableTalks({profileId}:{profileId:string}) {
 
   const value=(form:FormData,key:string)=>String(form.get(key)??'').trim();
 
-  return <section className="gs-contributions">
+  return <section className="gs-contributions gs-workspace">
     <h1>Table Talks</h1>
     <p>Run cybersecurity exercises, record decisions, and debrief the reasoning.</p>
     <Link to="/table-talks">Browse public exercises</Link>
     {error&&<p role="alert">{error}</p>}{notice&&<p role="status">{notice}</p>}
     {loading?<p>Loading exercises…</p>:<>
+      <div className="gs-workspace-grid">
       <form className="form-panel" onSubmit={event=>submit(event,async form=>{
         const result=await supabaseBrowser().from('ghost_table_talks')
           .insert({profile_id:profileId,title:value(form,'title'),summary:value(form,'summary')}).select('id').single();
@@ -136,11 +137,15 @@ export function SupabaseTableTalks({profileId}:{profileId:string}) {
         <label htmlFor="talk-new-summary">Public brief</label><textarea id="talk-new-summary" name="summary" maxLength={1200}/>
         <button className="button button-light" disabled={busy}>Create draft</button>
       </form>
+      <section className="dashboard-panel"><h2>Your exercises</h2>
+        {talks.length===0&&<p>No exercises here yet. Draft one or browse public exercises.</p>}
       <ul className="gs-card-list">{talks.map(talk=><li key={talk.id}>
         <button type="button" className="button button-outline" onClick={()=>open(talk.id)}>
           {talk.title} · {label(talk.status)}
         </button>
       </li>)}</ul>
+      </section>
+      </div>
       {selectedId&&!selected&&<p>The selected exercise is unavailable.</p>}
       {selected&&<div className="dashboard-panel" key={selected.id}>
         <h2>{selected.title}</h2><p>{selected.summary}</p><p>{label(selected.status)}</p>

@@ -3,6 +3,7 @@ import { seo } from '@/lib/seo';
 import { publicSupabaseWork } from '@/lib/supabase-public.server';
 import { librarySections } from '@/data/navigation';
 import { RESEARCH_KINDS } from '@/data/research';
+import { LibraryShowcase } from '@/components/library-showcase';
 import { PageHeading } from '@/components/page-heading';
 import { ResearchLibrary } from '@/components/research/research-library';
 
@@ -27,7 +28,7 @@ export default function Research({ loaderData }: Route.ComponentProps) {
   return (
     <main>
       <PageHeading {...section} action={{ to: '/contribute', label: 'Share research' }} />
-      <ResearchLibrary work={loaderData.work} allWork={loaderData.allWork} />
+      <LibraryShowcase library="research"/><ResearchLibrary work={loaderData.work} allWork={loaderData.allWork} />
     </main>
   );
 }

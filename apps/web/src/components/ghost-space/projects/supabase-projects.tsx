@@ -211,13 +211,14 @@ export function SupabaseProjects({profileId}:{profileId:string}) {
     },kind==='role'?'Role posted.':'Milestone added.');
   }
 
-  return <section className="gs-contributions">
+  return <section className="gs-contributions gs-workspace">
     <h1>Projects</h1>
     <p>Start a private project, publish its brief when ready, and collaborate through a private task board.</p>
     <Link to="/projects">Browse public projects</Link>
     {error&&<p role="alert">{error}</p>}
     {notice&&<p role="status">{notice}</p>}
     {loading?<p>Loading Projects…</p>:<>
+      <div className="gs-workspace-grid">
       <form className="form-panel" onSubmit={event=>saveProject(event)}>
         <h2>Start a project</h2>
         <label htmlFor="new-project-title">Title</label>
@@ -226,11 +227,15 @@ export function SupabaseProjects({profileId}:{profileId:string}) {
         <textarea id="new-project-summary" name="summary" maxLength={1200}/>
         <button className="button button-light" disabled={busy}>Create private project</button>
       </form>
+      <section className="dashboard-panel"><h2>Your projects</h2>
+        {projects.length===0&&<p>No projects here yet. Start a private project or browse public projects.</p>}
       <ul className="gs-card-list">{projects.map(row=><li key={row.id}>
         <button type="button" className="button button-outline" onClick={()=>select(row.id)}>
           {row.title} · {row.profile_id===profileId?'Maintaining':watching.includes(row.id)?'Watching':'Participation'} · {row.status}
         </button>
       </li>)}</ul>
+      </section>
+      </div>
       {selectedId&&!project&&<p>The selected project is unavailable.</p>}
       {project&&<div className="dashboard-panel" key={project.id}>
         <h2>{project.title}</h2>

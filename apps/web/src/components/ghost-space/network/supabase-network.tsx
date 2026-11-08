@@ -161,11 +161,12 @@ export function SupabaseNetwork({profileId}:{profileId:string}) {
     return terms.every(term=>index.includes(term));
   });
 
-  return <section className="gs-contributions">
+  return <section className="gs-contributions gs-workspace">
     <h1>Network</h1><p>Find Ghosts by their work and interests, save searches, and make private collaboration requests.</p>
     {error&&<p role="alert">{error}</p>}{notice&&<p role="status">{notice}</p>}
     {loading?<p>Loading Network…</p>:<>
-      <section className="dashboard-panel"><h2>Discover Ghosts</h2>
+      <div className="gs-workspace-grid">
+      <section className="dashboard-panel gs-workspace-wide"><h2>Discover Ghosts</h2>
         <label htmlFor="network-query">Handle, specialty, skill, tool, or industry</label>
         <input id="network-query" value={query} maxLength={250} onChange={event=>setQuery(event.target.value)}/>
         <label><input type="checkbox" checked={collaborationOnly}
@@ -242,6 +243,7 @@ export function SupabaseNetwork({profileId}:{profileId:string}) {
             `/ghost-space?section=table-talks&talk=${row.id}`}>{row.title}</Link> · {row.kind==='project'?'Project':'Table Talk'}
         </li>)}</ul>
       </section>
+      </div>
     </>}
     {recipient&&<div className="gs-overlay" role="dialog" aria-modal="true" aria-labelledby="network-compose-title">
       <form className="gs-overlay-panel gs-editor" onSubmit={send}>

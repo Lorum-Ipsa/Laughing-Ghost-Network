@@ -88,9 +88,10 @@ export function SupabaseSettings({userId,email,handle,onDeactivated}:{userId:str
       'Account deactivated.','Could not deactivate this account.',onDeactivated);
   }
 
-  return <section className="gs-contributions">
+  return <section className="gs-contributions gs-workspace">
     <h1>Settings</h1>
     {error&&<p role="alert">{error}</p>}{notice&&<p role="status">{notice}</p>}
+    <div className="gs-workspace-grid">
     <section className="dashboard-panel">
       <h2>Account</h2>
       <dl><dt>Ghost handle</dt><dd>@{handle}</dd><dt>Private sign-in email</dt><dd>{email||'Unavailable'}</dd></dl>
@@ -151,7 +152,7 @@ export function SupabaseSettings({userId,email,handle,onDeactivated}:{userId:str
       <p>Download your account details, preferences and selected activity as JSON. The file may contain private content. Encrypted messages remain encrypted, and private browser keys are excluded.</p>
       <button type="button" className="button button-outline" disabled={busy} onClick={exportAccount}>Download account export</button>
     </section>
-    <form className="dashboard-panel" onSubmit={deactivate}>
+    <form className="dashboard-panel gs-workspace-wide gs-workspace-danger" onSubmit={deactivate}>
       <h2>Deactivate account</h2>
       <p>Deactivation blocks private access and new activity and disables browser push. Your public profile, published work and attribution remain visible. There is no self-service reactivation. Export your data first if you need a copy.</p>
       <label htmlFor="settings-deactivate-handle">Enter your exact handle ({handle}) to confirm</label>
@@ -159,5 +160,6 @@ export function SupabaseSettings({userId,email,handle,onDeactivated}:{userId:str
         onChange={event=>setConfirmHandle(event.target.value)} required/>
       <button className="button button-outline" disabled={busy||confirmHandle!==handle}>Deactivate my account</button>
     </form>
+    </div>
   </section>;
 }
