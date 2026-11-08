@@ -16,5 +16,7 @@ The remaining applied versions are recorded here:
 | `20261108074923` | Preserve uppercase and safe punctuation in new Ghost handles; case-insensitive permanent reservation |
 | `20261108075127` | Add private reviewer authorization, queue access, review decisions, audit records and restricted publication RPC |
 | `20261108080058` | Consolidate review queue RLS access and index reviewer foreign keys |
+| `20261108081455` | Allow literal `//` in new handles; forbid isolated or triple slashes |
+| `20261108081854` | Event-triggered deterministic bot triage, reviewer investigation clearance and audit rules |
 
 **Do not replay** these directly on `lgn-development`. Resolve a reviewed Supabase CLI baseline before using them in a fresh staging environment. Future migrations should be generated and tested with the version of the CLI actually installed, with authorization and rollback tests.
