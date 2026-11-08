@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { supabaseBrowser } from '@/lib/supabase-browser';
+import { useDmEncryption } from './use-dm-encryption';
 import { ghostProfilePath } from '@/lib/ghost-handle';
 import type { Database } from '@/lib/supabase.database.types';
 
@@ -19,10 +20,13 @@ export function SupabaseMessages({profileId}:{profileId:string}) {
   const [loadedRecipient,setLoadedRecipient]=useState<string|null>(null);
   const [page,setPage]=useState(0);
   const [revision,setRevision]=useState(0);
+  const [keyRefresh,setKeyRefresh]=useState(0);
+  const [cleartext,setCleartext]=useState<Record<string,string>>({});
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState('');
   const contact=contacts.find(item=>item.id===recipient);
   const refresh=()=>setRevision(value=>value+1);
+  const encryption=useDmEncryption(profileId,contact?.id??null,keyRefresh);
 
   useEffect(()=>{
     const api=supabaseBrowser();
@@ -74,7 +78,7 @@ export function SupabaseMessages({profileId}:{profileId:string}) {
         let items:Message[]=[];
         if(current?.thread){
           const {data,error}=await api.from('ghost_direct_messages')
-            .select('id,thread_id,sender_profile_id,body,created_at').eq('thread_id',current.thread.id)
+            .select('id,thread_id,sender_profile_id,body,created_at,encrypted').eq('thread_id',current.thread.id)
             .order('created_at',{ascending:false}).order('id',{ascending:false})
             .range(page*pageSize,page*pageSize+pageSize);
           if(error)throw error;
@@ -87,10 +91,29 @@ export function SupabaseMessages({profileId}:{profileId:string}) {
     return()=>{active=false;};
   },[profileId,recipient,page,revision]);
 
+  useEffect(()=>{
+    let active=true;
+    setCleartext({});
+    const cipher=encryption.verified?encryption.cipher:null;
+    if(!cipher||loadedRecipient!==recipient)return;
+    void Promise.all(messages.filter(message=>message.encrypted).map(async message=>{
+      try{return [message.id,await cipher.decrypt(message.body,message.sender_profile_id)] as const;}
+      catch{return [message.id,'This message could not be authenticated.'] as const;}
+    })).then(rows=>{if(active)setCleartext(Object.fromEntries(rows));});
+    return()=>{active=false;};
+  },[messages,encryption.cipher,encryption.verified,loadedRecipient,recipient]);
+
   return <section className="gs-contributions">
     <h1>Messages</h1><p>Private conversations with mutual connections.</p>
-    <button className="button button-outline" type="button" onClick={refresh}>Refresh</button>
+    <button className="button button-outline" type="button" onClick={()=>{refresh();setKeyRefresh(value=>value+1);}}>Refresh</button>
     {error&&<p role="alert">{error}</p>}
+    {encryption.error&&<p role="alert">{encryption.error}</p>}
+    {encryption.unavailable&&<p>This Ghost’s messaging key is unavailable here. Use the browser where you enabled encryption.</p>}
+    {encryption.needsKey&&<div className="dashboard-panel">
+      <p>Your private key stays in this browser. Clearing browser data removes access to encrypted messages.</p>
+      <button type="button" className="button button-light" disabled={encryption.busy}
+        onClick={()=>void encryption.enable()}>Enable encryption on this browser</button>
+    </div>}
     {loading&&!contacts.length?<p>Loading conversations…</p>:<ul className="gs-card-list">
       {contacts.map(item=><li key={item.id}>
         <button type="button" className="button button-outline" aria-pressed={recipient===item.id}
@@ -110,20 +133,46 @@ export function SupabaseMessages({profileId}:{profileId:string}) {
         <ol>{messages.slice(0,pageSize).reverse().map(message=><li key={message.id}>
           <strong>{message.sender_profile_id===profileId?'You':contact.handle?'@'+contact.handle:'Ghost'}</strong>{' '}
           <time dateTime={message.created_at}>{new Date(message.created_at).toLocaleString()}</time>
-          <p style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{message.body}</p>
+          {!message.encrypted&&<small>Legacy plaintext · sent before encryption</small>}
+          <p style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{message.encrypted
+            ?encryption.verified?cleartext[message.id]??'Decrypting message…':'Encrypted message. Verify the safety code to read it.'
+            :message.body}</p>
         </li>)}</ol>
       </>}
-      {contact.connected&&contact.handle?<MessageComposer recipient={contact.id} onSent={()=>{setPage(0);refresh();}}/>:
+      {encryption.waitingForPeer&&<p>This Ghost needs to enable encryption. Refresh after they finish setup.</p>}
+      {encryption.cipher&&<SafetyCode key={contact.id} code={encryption.cipher.safetyCode}
+        verified={encryption.verified} busy={encryption.busy} onVerify={encryption.verify}/>}
+      {contact.connected&&contact.handle?
+        encryption.verified&&encryption.cipher&&<MessageComposer recipient={contact.id}
+          encrypt={encryption.cipher.encrypt} onSent={()=>{setPage(0);refresh();}}/>:
         <p>Conversation history is available. Reconnect in Network to send another message.</p>}
     </div>}
   </section>;
 }
 
-function MessageComposer({recipient,onSent}:{recipient:string;onSent:()=>void}) {
+function SafetyCode({code,verified,busy,onVerify}:{
+  code:string;verified:boolean;busy:boolean;onVerify:(code:string)=>Promise<void>;
+}){
+  const [peerCode,setPeerCode]=useState('');
+  return <details open={!verified}>
+    <summary>{verified?'Safety code verified':'Verify your safety code'}</summary>
+    <p>Compare codes with this Ghost over a separate, trusted channel. Only enter the code they give you.</p>
+    <code style={{overflowWrap:'anywhere'}}>{code.match(/.{1,4}/g)?.join(' ')}</code>
+    {!verified&&<form onSubmit={event=>{event.preventDefault();void onVerify(peerCode);}}>
+      <label htmlFor="dm-safety-code">Safety code from the other Ghost</label>
+      <input id="dm-safety-code" value={peerCode} onChange={event=>setPeerCode(event.target.value)} required/>
+      <button type="submit" disabled={busy||!peerCode.trim()}>Verify safety code</button>
+    </form>}
+  </details>;
+}
+
+function MessageComposer({recipient,encrypt,onSent}:{
+  recipient:string;encrypt:(body:string)=>Promise<string>;onSent:()=>void;
+}) {
   const [body,setBody]=useState('');
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
-  const attempt=useRef<{id:string;body:string}|null>(null);
+  const attempt=useRef<{id:string;body:string;envelope:string}|null>(null);
 
   async function send(event:FormEvent<HTMLFormElement>){
     event.preventDefault();
@@ -131,16 +180,16 @@ function MessageComposer({recipient,onSent}:{recipient:string;onSent:()=>void}) 
     if(busy||!content)return;
     setBusy(true);setError('');
     try{
-      if(attempt.current?.body!==content)attempt.current={id:crypto.randomUUID(),body:content};
+      if(attempt.current?.body!==content)attempt.current={id:crypto.randomUUID(),body:content,envelope:await encrypt(content)};
       const {error}=await supabaseBrowser().rpc('send_ghost_direct_message',{
-        p_recipient_profile_id:recipient,p_client_id:attempt.current.id,p_body:content,
+        p_recipient_profile_id:recipient,p_client_id:attempt.current.id,p_body:attempt.current.envelope,
       });
       if(error)throw error;
       attempt.current=null;
       setBody('');onSent();
     }catch(e){
       setError(typeof e==='object'&&e!==null&&'code' in e&&e.code==='42501'
-        ?'An active mutual connection is required to send a message.'
+        ?'An active connection and both encryption keys are required.'
         :'Message could not be sent. Try again to retry the same send.');
     }finally{setBusy(false);}
   }

@@ -1023,6 +1023,18 @@ export type Database = {
           referencedColumns: ["id"]
         }]
       }
+      ghost_dm_identity_keys: {
+        Row: { profile_id: string; public_key: string; created_at: string }
+        Insert: { profile_id: string; public_key: string; created_at?: string }
+        Update: { profile_id?: string; public_key?: string; created_at?: string }
+        Relationships: [{
+          foreignKeyName: "ghost_dm_identity_keys_profile_id_fkey"
+          columns: ["profile_id"]
+          isOneToOne: true
+          referencedRelation: "ghost_profiles"
+          referencedColumns: ["id"]
+        }]
+      }
       ghost_direct_messages: {
         Row: {
           id: string
@@ -1030,9 +1042,11 @@ export type Database = {
           sender_profile_id: string
           client_id: string
           body: string
+          encrypted: boolean
           created_at: string
         }
         Insert: {
+          encrypted?: boolean
           id?: string
           thread_id: string
           sender_profile_id: string
@@ -1041,6 +1055,7 @@ export type Database = {
           created_at?: string
         }
         Update: {
+          encrypted?: boolean
           id?: string
           thread_id?: string
           sender_profile_id?: string

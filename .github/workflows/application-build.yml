@@ -48,6 +48,8 @@ jobs:
         run: bun test apps/web/tests/ghost-handle.test.ts
       - name: Validate browser push worker syntax
         run: node --check apps/web/public/lgn-push-sw.js
+      - name: Verify direct-message cryptography
+        run: bun test apps/web/tests/dm-crypto.test.ts
       - name: Build SSR frontend
         run: bun run build
       - name: Typecheck
