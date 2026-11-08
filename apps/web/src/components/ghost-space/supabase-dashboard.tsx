@@ -112,7 +112,7 @@ export function SupabaseGhostSpaceDashboard() {
           <p>Your email is verified. Choose your permanent public handle. If the name you selected was taken (including a different capitalization), choose another. The exact capitalization you claim will be preserved.</p>
           <form className="form-panel" onSubmit={claim}>
             <div className="field"><label htmlFor="new-handle">Permanent Ghost handle</label>
-              <input id="new-handle" required minLength={3} maxLength={40} pattern="[A-Za-z0-9][A-Za-z0-9._!@#$&+~-]{2,39}"
+              <input id="new-handle" required minLength={3} maxLength={40} pattern="[A-Za-z0-9][A-Za-z0-9._!@#$&+~\-]{2,39}"
                 value={newHandle} onChange={e => setNewHandle(e.target.value)} /></div>
             <button disabled={busy} className="button button-light">{busy ? 'Claiming…' : 'Claim Ghost handle'}</button>
             {claimError && <p role="alert" className="status-message error-message">{claimError}</p>}

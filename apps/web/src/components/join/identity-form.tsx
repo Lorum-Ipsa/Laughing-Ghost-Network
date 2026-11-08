@@ -87,7 +87,7 @@ export function IdentityForm() {
       <div className="field">
         <label htmlFor="join-handle">Persistent Ghost handle *</label>
         <input id="join-handle" name="handle" required minLength={3} maxLength={40}
-          pattern="[A-Za-z0-9][A-Za-z0-9._!@#$&+~-]{2,39}" autoComplete="off" placeholder="Ghost!One" />
+          pattern="[A-Za-z0-9][A-Za-z0-9._!@#$&+~\-]{2,39}" autoComplete="off" placeholder="Ghost!One" />
         <small>Capital letters and . _ - ! @ # $ & + ~ are allowed. Your exact capitalization is preserved, but names are reserved case-insensitively. Choose carefully: handles are permanent.</small>
       </div>
       <div className="field">
