@@ -4,7 +4,14 @@
 
 LGN emphasizes responsible publication, demonstrated work, useful collaboration, and persistent Ghost identities—not popularity or entry barriers.
 
-> **Development status:** LGN Phase 1 is under review in [draft PR #3](https://github.com/Lorum-Ipsa/Laughing-Ghost-Network/pull/3) and uses the `lgn-development` Supabase project. Keep the preview private and obtain maintainer approval before merge or production cutover.
+> **Development status** — Phase 1 is deployed to a temporary Hostinger site for acceptance review. The review site uses the `lgn-development` Supabase project. Production cutover requires maintainer approval.
+
+## Phase 1 review
+
+- [Open the hosted test site](https://dimgrey-spider-282826.hostingersite.com/)
+- [Run the Phase 1 acceptance checklists](docs/supabase/README.md#phase-1-acceptance)
+
+Use dedicated test accounts and synthetic content when testing signed-in flows.
 
 ## Start here
 
@@ -31,7 +38,7 @@ The source is a Bun-workspace monorepo with React/React Router/TypeScript/Tailwi
 
 Supabase is the only runtime database. The retired PocketBase source remains available in Git history. There were no active member accounts to migrate. The fictional public profiles and work are bundled with the app.
 
-**Acceptance pending:** Complete the [feature checklists](docs/supabase/README.md) in the private preview before final approval.
+**Acceptance pending:** Complete the [feature checklists](docs/supabase/README.md) on the hosted test site before final approval.
 
 The current browser-only Supabase Auth implementation is for **development**. Production requires reviewed cookie-backed SSR/PKCE sessions, hardened caching/redirects, production secrets management, versioned migration baseline and staging tests. Public publishable browser keys are not secret, but private keys must never enter the client or the repository.
 
