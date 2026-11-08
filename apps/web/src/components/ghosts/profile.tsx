@@ -96,7 +96,7 @@ export function Profile({ profile, work, avatarUrlOverride }: { profile: GhostPr
               <GhostAvatar profile={profile} size={96} className="profile-avatar" forceShow />
             </span>
           )}
-          <span className="mono">IDENTITY / {profile.handle.toUpperCase()}</span>
+          <span className="mono">IDENTITY / {profile.handle}</span>
           <span className="item-status">{profile.example ? 'DEMO PROFILE' : 'MEMBER'}</span>
           {langLabel && <span className="mono">{t('profile.language').toUpperCase()} / {langLabel}</span>}
           {showLanguages && languages.length > 0 && <span className="mono">LANGUAGES / {languages.join(', ')}</span>}

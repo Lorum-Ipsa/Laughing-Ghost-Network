@@ -24,13 +24,13 @@ export function IdentityForm() {
     event.preventDefault();
     if (busy) return;
     const data = new FormData(event.currentTarget);
-    const handle = String(data.get('handle') || '').trim().toLowerCase();
+    const handle = String(data.get('handle') || '').trim();
     const email = String(data.get('email') || '').trim();
     setBusy(true);
     setError('');
     try {
       if (user?.email_confirmed_at) { navigate('/ghost-space'); return; }
-      if (!HANDLE_PATTERN.test(handle)) throw new Error('Use a handle of 3–40 lowercase letters, digits, underscores, hyphens or slashes.');
+      if (!HANDLE_PATTERN.test(handle)) throw new Error('Use 3–40 characters, starting with a letter or digit; letters, numbers, . _ - ! @ # $ & + ~ are allowed.');
       const password = String(data.get('password') || '');
       if (password.length < 12) throw new Error('Use a password of at least 12 characters.');
       if (password !== String(data.get('passwordConfirm') || '')) throw new Error('Passwords do not match.');
@@ -40,10 +40,8 @@ export function IdentityForm() {
         throw new Error('Choose fewer specialties; each list must be at most 250 characters.');
       }
       const api = supabaseBrowser();
-      const { data: used, error: lookupError } = await api.from('ghost_profiles')
-        .select('id').eq('handle', handle).maybeSingle();
-      if (lookupError) throw lookupError;
-      if (used) throw new Error('That handle is already taken. Choose another.');
+      // Uniqueness is enforced case-insensitively by the server's permanent
+      // handle ledger after confirmation; a client-side check cannot reserve it.
       const country = disclosure === 'country' ? String(data.get('location_country') || '').trim() : '';
       const { data: registration, error: signupError } = await api.auth.signUp({
         email,
@@ -89,8 +87,8 @@ export function IdentityForm() {
       <div className="field">
         <label htmlFor="join-handle">Persistent Ghost handle *</label>
         <input id="join-handle" name="handle" required minLength={3} maxLength={40}
-          pattern="[a-z0-9_/-]+" autoComplete="off" placeholder="your_handle" />
-        <small>Your handle becomes permanent after email confirmation and profile creation.</small>
+          pattern="[A-Za-z0-9][A-Za-z0-9._!@#pattern="[a-z0-9_/-]+" autoComplete="off" placeholder="your_handle" />+~-]{2,39}" autoComplete="off" placeholder="Ghost!One" />
+        <small>Capital letters and . _ - ! @ # $ & + ~ are allowed. Your exact capitalization is preserved, but names are reserved case-insensitively. Choose carefully: handles are permanent.</small>
       </div>
       <div className="field">
         <label htmlFor="join-email">Private email address *</label>

@@ -64,8 +64,8 @@ export function SupabaseGhostSpaceDashboard() {
   async function claim(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!user || busy) return;
-    const handle = newHandle.trim().toLowerCase();
-    if (!HANDLE_PATTERN.test(handle)) { setClaimError('Handle must be 3–40 lowercase letters, digits, underscores, hyphens or slashes.'); return; }
+    const handle = newHandle.trim();
+    if (!HANDLE_PATTERN.test(handle)) { setClaimError('Handles need 3–40 characters, starting with a letter or digit; letters, digits, . _ - ! @ # $ & + ~ are supported.'); return; }
     setBusy(true);
     setClaimError('');
     try {
@@ -98,10 +98,10 @@ export function SupabaseGhostSpaceDashboard() {
         <div className="gs-placeholder">
           <span className="eyebrow"><span className="tiny-dot"/> COMPLETE YOUR GHOST IDENTITY</span>
           <h1>Claim your handle.</h1>
-          <p>Your email is verified. Choose your permanent public handle. If the one you selected when joining has since been taken, choose another.</p>
+          <p>Your email is verified. Choose your permanent public handle. If the name you selected was taken (including a different capitalization), choose another. The exact capitalization you claim will be preserved.</p>
           <form className="form-panel" onSubmit={claim}>
             <div className="field"><label htmlFor="new-handle">Permanent Ghost handle</label>
-              <input id="new-handle" required minLength={3} maxLength={40} pattern="[a-z0-9_/-]+"
+              <input id="new-handle" required minLength={3} maxLength={40} pattern="[A-Za-z0-9][A-Za-z0-9._!@#maxLength={40} pattern="[a-z0-9_/-]+"+~-]{2,39}"
                 value={newHandle} onChange={e => setNewHandle(e.target.value)} /></div>
             <button disabled={busy} className="button button-light">{busy ? 'Claiming…' : 'Claim Ghost handle'}</button>
             {claimError && <p role="alert" className="status-message error-message">{claimError}</p>}

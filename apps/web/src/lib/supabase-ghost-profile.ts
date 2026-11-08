@@ -32,14 +32,14 @@ export type GhostIdentity = {
 };
 
 const FIELDS = 'id,handle,display_name,pronouns,bio,specialties,developing_specialties,portfolio,location_disclosure,location_country,skills,tools,platform,industry,languages,language,available_for_work,open_to_collaboration,open_to_research,open_to_mentorship,open_to_speaking,collaboration_interests,external_links,avatar_template,featured_work,created_at,updated_at' as const;
-export const HANDLE_PATTERN = /^[a-z0-9_/-]{3,40}$/;
+export const HANDLE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._!@#export const HANDLE_PATTERN = /^[a-z0-9_/-]{3,40}$/;+~-]{2,39}$/;
 
 export function signupDetails(user: User) {
   const data = user.user_metadata ?? {};
   const locationDisclosure = ['undisclosed','remote','country'].includes(data.lgn_location_disclosure)
     ? data.lgn_location_disclosure as string : 'undisclosed';
   return {
-    handle: typeof data.lgn_handle === 'string' ? data.lgn_handle.toLowerCase() : '',
+    handle: typeof data.lgn_handle === 'string' ? data.lgn_handle.trim() : '',
     specialties: typeof data.lgn_specialties === 'string' ? data.lgn_specialties.slice(0,250) : '',
     developing_specialties: typeof data.lgn_developing_specialties === 'string' ? data.lgn_developing_specialties.slice(0,250) : '',
     portfolio: typeof data.lgn_portfolio === 'string' ? data.lgn_portfolio.slice(0,2048) : '',
@@ -67,7 +67,7 @@ export async function claimGhostProfile(user: User, handle: string, fields: {
   location_country?: string;
 } = {}): Promise<GhostIdentity> {
   if (!user.email_confirmed_at) throw new Error('Verify your email before claiming a Ghost handle.');
-  if (!HANDLE_PATTERN.test(handle)) throw new Error('Use 3–40 lowercase letters, digits, underscores, hyphens or slashes.');
+  if (!HANDLE_PATTERN.test(handle)) throw new Error('Use 3–40 characters starting with a letter or digit; letters, digits, . _ - ! @ # $ & + ~ are allowed.');
   const previous = await findMyGhostProfile();
   if (previous) return previous;
   const disclosure = ['undisclosed','remote','country'].includes(fields.location_disclosure || '')
