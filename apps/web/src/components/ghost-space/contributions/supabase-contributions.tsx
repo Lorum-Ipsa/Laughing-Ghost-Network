@@ -46,8 +46,9 @@ function validateDraft(draft:Draft,target:WorkState):Draft {
     if(url.protocol!=='https:')throw new Error('Source link must use HTTPS.');
   }
   if (target==='submitted'){
-    if(next.title.length<10||next.summary.length<40||next.body.trim().length<100){
-      throw new Error('For review, provide a title (10+ characters), summary (40+), and method/documentation (100+).');
+    if (!next.title) throw new Error('Add a title before submitting for review.');
+    if (![next.summary,next.body,next.code,next.source_url].some(value=>value.trim().length>0)){
+      throw new Error('Add a summary, description, code, or a source link before submitting for review.');
     }
   }
   return next;
@@ -228,20 +229,20 @@ export function SupabaseContributions({profile,userId}:Props) {
             {CONTENT_LANGUAGES.map(l=><option key={l.code} value={l.code}>{l.native} ({l.code})</option>)}</select></div>
         <div className="field"><label htmlFor="ce-title">Title</label>
           <input id="ce-title" maxLength={180} value={draft.title} onChange={e=>editorField('title',e.target.value)}/></div>
-        <div className="field"><label htmlFor="ce-summary">Summary (40+ characters to submit)</label>
+        <div className="field"><label htmlFor="ce-summary">Summary (optional)</label>
           <textarea id="ce-summary" rows={4} maxLength={500} value={draft.summary} onChange={e=>editorField('summary',e.target.value)}/></div>
         <div className="field"><label htmlFor="ce-domain">Specialty / domain</label>
           <input id="ce-domain" maxLength={250} value={draft.domain} onChange={e=>editorField('domain',e.target.value)}/></div>
-        <div className="field"><label htmlFor="ce-body">Method and documentation (100+ characters to submit)</label>
+        <div className="field"><label htmlFor="ce-body">Description, method, or documentation (optional)</label>
           <textarea id="ce-body" rows={12} maxLength={50000} value={draft.body} onChange={e=>editorField('body',e.target.value)}
-            placeholder={'RESEARCH QUESTION\nWhat is being investigated?\n\nSCOPE\nWhat was tested and what was not?\n\nMETHOD\nSteps, constraints, evidence, and reproducibility.\n\nLIMITATIONS\nWhat the evidence does not establish.'}/></div>
+            placeholder={'Describe your contribution in your own words. Add context, a method, or evidence if it helps readers understand your work.'}/></div>
         <div className="field"><label htmlFor="ce-tags">Tags (comma-separated)</label>
           <input id="ce-tags" maxLength={1500} value={draft.tags} onChange={e=>editorField('tags',e.target.value)}/></div>
         <div className="field"><label htmlFor="ce-source">Source reference (HTTPS, optional)</label>
           <input id="ce-source" type="url" maxLength={2048} value={draft.source_url} onChange={e=>editorField('source_url',e.target.value)}/></div>
         <div className="field"><label htmlFor="ce-code">Code / technical artifacts (optional)</label>
           <textarea id="ce-code" rows={6} maxLength={50000} value={draft.code} onChange={e=>editorField('code',e.target.value)}/></div>
-        <div className="callout">Work stays private until a separate reviewer approves publication. The author controls drafts and submission but cannot publish or change review outcomes. Attachments and moderator feedback will follow in a separate migration.</div>
+        <div className="callout">To submit for review, add a title and at least one of: summary, description, code, or source link. Brief contributions are welcome. Work stays private until reviewed; only moderators can publish. Attachments and reviewer feedback are a separate migration.</div>
         <div className="gs-builder-actions">
           <button type="button" className="button button-outline" disabled={busy||editing?.status==='archived'} onClick={()=>{void save('draft');}}>
             <Save size={14}/> {busy?'Saving…':'Save draft'}</button>

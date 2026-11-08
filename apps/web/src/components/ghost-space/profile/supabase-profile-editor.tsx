@@ -69,7 +69,7 @@ function validate(draft: Editable): Editable {
 function PillTags({ value }: {value:string}) {
   return <div className="tags">{tagsOf(value).map(tag=><span key={tag}>{tag}</span>)}</div>;
 }
-function Preview({ draft, handle }: {draft: Editable; handle:string}) {
+function Preview({ draft, handle, onClose }: {draft: Editable; handle:string; onClose:()=>void}) {
   const availability=[
     draft.available_for_work&&'Available for work',
     draft.open_to_collaboration&&'Collaboration',
@@ -78,9 +78,17 @@ function Preview({ draft, handle }: {draft: Editable; handle:string}) {
     draft.open_to_speaking&&'Speaking',
   ].filter(Boolean);
   const links=parseExternalLinks(draft.external_links);
-  return <div className="gs-profile-preview">
-    <div className="callout">Local preview of fields that will be saved publicly. Changes are not visible to visitors until you save. Uploaded avatars and public-directory rendering are a separate migration.</div>
-    <div className="form-panel">
+  return <div className="gs-overlay" role="dialog" aria-modal="true" aria-label="Preview public Ghost profile">
+    <div className="gs-overlay-panel gs-preview">
+      <header className="gs-overlay-head">
+        <div><span className="eyebrow"><span className="tiny-dot"/> PROFILE PREVIEW</span>
+          <h2>Public Ghost identity</h2></div>
+        <button className="gs-overlay-close" type="button" aria-label="Close profile preview" onClick={onClose}>
+          <X size={18} />
+        </button>
+      </header>
+      <div className="callout">This is a preview of the public details in your current draft. Unsaved changes are not visible to other visitors. The actual published profile will be updated only when you save.</div>
+      <div className="form-panel">
       <div style={{display:'flex',alignItems:'center',gap:20}}>
         <TemplateGhost template={resolveTemplate({handle,avatar_template:draft.avatar_template})} size={96}/>
         <div><span className="eyebrow">GHOST IDENTITY</span><h2>{draft.display_name||handle}</h2><p className="muted-note">@{handle} {draft.pronouns&&'· '+draft.pronouns}</p></div>
@@ -96,6 +104,10 @@ function Preview({ draft, handle }: {draft: Editable; handle:string}) {
       {draft.collaboration_interests&&<p><strong>Looking for:</strong> {draft.collaboration_interests}</p>}
       {draft.portfolio&&safeExternal(draft.portfolio)&&<p><a href={draft.portfolio} target="_blank" rel="noreferrer">Public portfolio</a></p>}
       {links.length>0&&<div>{links.map(l=><p key={l.platform+l.url}><a href={l.url} target="_blank" rel="noreferrer">{l.platform}</a></p>)}</div>}
+      </div>
+      <div className="gs-builder-actions">
+        <button className="button button-outline" type="button" onClick={onClose}><X size={14}/> Return to editor</button>
+      </div>
     </div>
   </div>;
 }
@@ -108,6 +120,14 @@ export function SupabaseProfileEditor({ profile, onSaved }: Props) {
   useEffect(()=>{
     setDraft(editable(profile));setPreview(false);setError('');setSaved(false);
   },[profile.id,profile.updated_at]);
+  useEffect(() => {
+    if (!preview) return;
+    function onEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') setPreview(false);
+    }
+    document.addEventListener('keydown', onEscape);
+    return () => document.removeEventListener('keydown', onEscape);
+  }, [preview]);
   const dirty=useMemo(()=>JSON.stringify(editable(profile))!==JSON.stringify(draft),[draft,profile]);
   function set<K extends keyof Editable>(field:K,value:Editable[K]) {
     setDraft(prev=>({...prev,[field]:value}));setSaved(false);
@@ -141,7 +161,6 @@ export function SupabaseProfileEditor({ profile, onSaved }: Props) {
           <Eye size={14}/>{preview?' Return to editor':' Preview public details'}</button>
       </div>
     </header>
-    {preview&&<Preview draft={draft} handle={profile.handle}/>}
     <form className="gs-profile-builder" onSubmit={submit}>
       <section className="gs-builder-section"><h2 className="gs-builder-h2">Identity</h2>
         <div className="gs-builder-grid">
@@ -255,5 +274,6 @@ export function SupabaseProfileEditor({ profile, onSaved }: Props) {
           <Eye size={14}/>Preview public details</button>
       </div>
     </form>
+    {preview&&<Preview draft={draft} handle={profile.handle} onClose={()=>setPreview(false)}/>}
   </div>;
 }
