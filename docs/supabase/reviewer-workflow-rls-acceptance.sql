@@ -17,7 +17,7 @@ insert into public.ghost_profiles(owner_id,handle)
 select id,'QaAuthor!2026' from qa_users where kind='author';
 insert into public.ghost_contributions(owner_id,profile_id,title,body,status)
 select id,(select id from public.ghost_profiles where handle='QaAuthor!2026'),
-'A QA research note','Brief note','submitted' from qa_users where kind='author';
+'A QA research note','-----BEGIN PRIVATE KEY----- synthetic fixture','submitted' from qa_users where kind='author';
 insert into qa_results values('ordinary author cannot review',not public.can_review_contributions());
 set local role anon;
 insert into qa_results(label,passed)
@@ -65,6 +65,9 @@ begin
  insert into qa_results values('stale version blocked',false);
 exception when serialization_failure then insert into qa_results values('stale version blocked',true);
 end $x$;
+-- The synthetic credential marker is held again after resubmission.
+do $x$
+begin perform public.review_ghost_contribution((select id from public.ghost_contributions where title='A QA research note'),3,'triage_cleared','Verified synthetic fixture');end $x$;
 do $x$
 begin perform public.review_ghost_contribution((select id from public.ghost_contributions where title='A QA research note'),3,'published','Approved');end $x$;
 reset role;
@@ -84,7 +87,7 @@ insert into public.ghost_profiles(owner_id,handle)
 select id,'QaReviewer+2026' from qa_users where kind='reviewer';
 insert into public.ghost_contributions(owner_id,profile_id,title,body,status)
 select id,(select id from public.ghost_profiles where handle='QaReviewer+2026'),
-'Reviewer self note','Content','submitted' from qa_users where kind='reviewer';
+'Reviewer self note','-----BEGIN PRIVATE KEY----- synthetic fixture','submitted' from qa_users where kind='reviewer';
 do $x$
 begin
  perform public.review_ghost_contribution((select id from public.ghost_contributions where title='Reviewer self note'),1,'published','');

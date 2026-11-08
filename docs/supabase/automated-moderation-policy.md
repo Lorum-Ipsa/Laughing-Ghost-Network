@@ -1,46 +1,32 @@
-# LGN automated moderation policy — rules bot v1
+# LGN contribution publication and screening
 
-LGN's initial moderation bot is an **event-triggered deterministic rules engine**, not an AI model. It runs immediately when a contribution is submitted or resubmitted. Each evaluation is stored for the exact contribution version with a stable rule ID and recommended disposition.
+A verified, active Ghost can publish research from Ghost Space. The Publish contribution action requires a title and at least one of a summary, description, code, or source link. The database screens the exact version in the same transaction. Ordinary submissions become public immediately, with a timestamp and version history.
 
-## Explicit rule matrix
+Malware analysis, sample source code, exploit proofs of concept, attack simulations, and adversary emulation are eligible for research publication. The category and cybersecurity terminology alone do not trigger a hold. The current policy also removes the duplicate-only hold.
 
-| ID | Trigger | Recommendation | Human requirement |
-| --- | --- | --- | --- |
-| R001 | No defined escalation signal detected | Routine human review | Check authenticity, scope, quality and fit before deciding |
-| R201 | Exact duplicate of a submitted or published work by the same author | Proposed rejection | Confirm legitimate duplicate versus justified repost/revision; reject with feedback or clear |
-| R301 | Text resembles a credential or private-key pattern | Further investigation | Check whether it is a real secret, verify authorization, redact if needed, and record clearance |
-| R302 | `malware_samples`, `exploit_pocs`, `attack_simulations`, or `adversary_emulation` artifact | Further investigation | Verify scope/consent, risk and release requirements, then document clearance |
+## Specific concern that triggers review
 
-An investigation takes precedence over a proposed rejection; a proposed rejection takes precedence over routine review. The report stores all triggered rules and `LGN-TRIAGE-1` as the policy version.
+| Rule | Trigger | Outcome |
+| --- | --- | --- |
+| R301 | A supported credential or private-key pattern appears in the submission | Keep the version private and ask a reviewer to check for exposed secrets and request redaction if needed |
 
-## Authorization and decision rules
+LGN displays the type of concern without copying the matched text into the finding. A reviewer can request changes, reject with a reason, or record a clearance and then publish. A reviewer cannot decide their own held work. Clearance applies to one exact version. A corrected submission without a finding publishes on resubmission.
 
-- **Bots do not publish, reject, ban or suspend.** They propose actions only; technical or controversial terminology is not itself grounds for rejection.
-- Verified, active humans in private `reviewer`, `moderator`, or `admin` roles can request revision, reject with a reason, or approve.
-- A flagged version cannot be published before an authorized human logs an investigation clearance and reason. Clearance alone **does not** publish.
-- A reviewer cannot decide their own contribution. Review operations require the correct, current version to prevent acting on superseded material. The [pending version guard](review-version-guard.sql) closes a bypass where an explicit null could skip this check.
-- Every human decision and clearance is recorded in `ghost_contribution_reviews`; author-visible review feedback is kept private from other members.
+Existing queued contributions retain their historical findings. Authors can withdraw and resubmit them under the new policy. Previously recorded findings remain available as audit history.
 
-## Security and limitations
+## Handling published code
 
-The bot is a synchronous PostgreSQL trigger, so no cron service, external API, human-run script or browser session is required. The rule records are in `ghost_contribution_triage`, protected by RLS and read-only to the member. The bot does **not** copy suspected credential values into the finding text or send submission content to a model vendor.
+LGN renders source as escaped text inside the public article. Copy and plain-text downloads are available. LGN does not run submitted code, interpret it as HTML, or host executable attachments through this workflow. External citations remain separate links.
 
-This is **not** a complete spam, harassment, impersonation, threat intelligence, malware-analysis or legal-compliance screening system. R001 does not prove work is safe. A human remains responsible for context, safety and editorial review, including disclosures that do not match the deterministic patterns. Reviewers must not execute submitted code or casually open unknown links.
+## Development verification
 
-The narrowly privileged `review_ghost_contribution` RPC is intentionally accessible to authenticated members but enforces server-owned membership roles, non-self-review, version and status checks. Supabase flags it for review: [Security-definer RPC advisory](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable). An independent production security review is required.
+Apply [the version guard](review-version-guard.sql) followed by [the publication SQL](publish-research-with-targeted-screening.sql) after approval for persistent rollout. To verify in a rollback-only transaction, place both SQL files immediately after `begin;` in a temporary copy of each acceptance script.
 
-## Verification
+- [Publication and targeted screening](targeted-publication-acceptance.sql)
+- [Reviewer authorization and decisions](reviewer-workflow-rls-acceptance.sql)
+- [Contribution authorization and privacy](contributions-rls-acceptance.sql)
+- [Historical v1 screening checks](rules-bot-triage-acceptance.sql), run before applying the new publication SQL.
 
-- [17 bot screening/security checks](rules-bot-triage-acceptance.sql)
-- [18 reviewer workflow checks](reviewer-workflow-rls-acceptance.sql)
-- [14 author contribution privacy checks](contributions-rls-acceptance.sql)
-- [9 handle reservation checks](handle-validation-rls-acceptance.sql)
-- [5 URL and slash-validation tests](../../apps/web/tests/ghost-handle.test.ts)
+Browser acceptance should cover publishing an ordinary contribution and an inert code sample, opening both as a signed-out visitor, and confirming that a synthetic credential marker stays private until corrected or cleared. The published-code check should confirm that markup-like text is visible literally and creates no DOM elements or script execution.
 
-All database tests create synthetic accounts inside a `BEGIN`/`ROLLBACK` transaction. No reviewer roles are automatically granted to real members.
-
-The version guard was verified against `lgn-development` inside rollback-only transactions. It has not been applied as a remote migration. To repeat the verification before rollout, insert the guard SQL immediately after `begin;` in a temporary copy of the bot acceptance script and run that copy in the development SQL editor. For browser acceptance after rollout, clear a flagged submission, request a revision, and have the author resubmit with the same synthetic trigger. The new version should require a separate clearance before publication.
-
-## Next scope, not yet implemented
-
-Before launch, add abuse reporting, appeals, review sampling, attachment scanning, spam/rate limits, safe external-link checks, human moderation dashboards and evidence retention rules. Optional AI-assisted interpretation would be **advisory** and requires a separately approved model, privacy controls, documented quality benchmarks, and an explicit human override; no model should be able to publish or reject independently by default.
+The initial screen detects a limited set of credential patterns. Post-publication reporting and takedown are separate work.

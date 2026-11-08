@@ -145,7 +145,7 @@ export function SupabaseReviewQueue({profile}:Props){
       <div>
         <span className="eyebrow"><span className="tiny-dot"/> GHOST SPACE / MODERATION</span>
         <h1>Review queue.</h1>
-        <p className="gs-section-lede">LGN's rules bot screens every submitted version. Review flagged cases first, investigate or dismiss signals with a recorded reason, then decide publication. Bots never reject or publish on their own.</p>
+        <p className="gs-section-lede">Submissions with a screening concern appear here. Investigate the finding and record your decision. Research without a finding can publish directly.</p>
       </div>
       <button className="button button-outline" type="button" onClick={()=>void refresh()}>
         <RefreshCw size={14}/> Refresh
@@ -195,7 +195,7 @@ export function SupabaseReviewQueue({profile}:Props){
         <section className="form-panel" aria-label="Automated screening results">
           <span className="eyebrow">RULES BOT / {selected.triage?.policy_version||'UNSCREENED'}</span>
           <h3>{reviewLabel(selected.triage)}</h3>
-          <p className="muted-note">Automated findings are suggestions, not verified violations. They never publish or reject work.</p>
+          <p className="muted-note">An automated finding identifies a possible concern. A human decides whether held work can publish.</p>
           {botFindings(selected.triage).map(finding=><div key={finding.rule} style={{marginBottom:12}}>
             <strong>{finding.rule}: {finding.finding}</strong>
             <p>{finding.required_action}</p>

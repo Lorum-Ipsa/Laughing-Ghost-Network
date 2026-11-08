@@ -50,9 +50,9 @@ function validateDraft(draft:Draft,target:WorkState):Draft {
     if(url.protocol!=='https:')throw new Error('Source link must use HTTPS.');
   }
   if (target==='submitted'){
-    if (!next.title) throw new Error('Add a title before submitting for review.');
+    if (!next.title) throw new Error('Add a title before publishing.');
     if (![next.summary,next.body,next.code,next.source_url].some(value=>value.trim().length>0)){
-      throw new Error('Add a summary, description, code, or a source link before submitting for review.');
+      throw new Error('Add a summary, description, code, or a source link before publishing.');
     }
   }
   return next;
@@ -71,7 +71,7 @@ function Preview({item,onClose}:{item:GhostContribution,onClose:()=>void}) {
       {item.code&&<pre className="code-block" style={{whiteSpace:'pre-wrap'}}>{item.code}</pre>}
       {item.source_url&&<p><a href={item.source_url} target="_blank" rel="noreferrer">Open source reference</a></p>}
       {item.tags&&<p className="muted-note">Tags: {item.tags}</p>}
-      {item.status!=='published'&&<p className="muted-note">Only you can see this contribution until a reviewer publishes it.</p>}
+      {item.status!=='published'&&<p className="muted-note">This contribution is currently private.</p>}
     </div>
   </div>;
 }
@@ -167,6 +167,7 @@ export function SupabaseContributions({profile,userId}:Props) {
     try {
       const checked=validateDraft(draft,target);
       if(editing===undefined)throw new Error('No active editor.');
+      let savedStatus: string;
       if(editing) {
         if(editing.status==='published')throw new Error('Published work is locked pending the moderated revision workflow.');
         const {data,error}=await supabaseBrowser().from('ghost_contributions')
@@ -176,16 +177,19 @@ export function SupabaseContributions({profile,userId}:Props) {
           .select(FIELDS).maybeSingle();
         if(error)throw error;
         if(!data)throw new Error('Work changed in another tab, or your account no longer has permission. Refresh before editing.');
+        savedStatus=data.status;
       } else {
-        const {error}=await supabaseBrowser().from('ghost_contributions').insert({
+        const {data,error}=await supabaseBrowser().from('ghost_contributions').insert({
           owner_id:userId,profile_id:profile.id,...checked,status:target
-        });
+        }).select('status').single();
         if(error)throw error;
+        savedStatus=data.status;
       }
       await reload();
       setEditing(undefined);
-      setTab(target==='submitted'?'in_review':'drafts');
-      setNotice(target==='submitted'?'Contribution submitted for review. Only moderators can publish it.':'Contribution draft saved.');
+      setTab(savedStatus==='published'?'published':savedStatus==='submitted'?'in_review':'drafts');
+      setNotice(savedStatus==='published'?'Contribution published.':
+        savedStatus==='submitted'?'Contribution held for review. Check In Review for details.':'Contribution draft saved.');
     } catch(e){setError(requestErrors(e));}finally{setBusy(false);}
   }
   async function transition(item:GhostContribution,target:'draft'|'archived') {
@@ -216,7 +220,7 @@ export function SupabaseContributions({profile,userId}:Props) {
     <header className="gs-section-head"><div>
       <span className="eyebrow"><span className="tiny-dot"/> GHOST SPACE / CONTRIBUTIONS</span>
       <h1>Contributions.</h1>
-      <p className="gs-section-lede">Your work is your signature. Draft privately, document a method, submit for independent review, and preserve a version history. No likes or popularity rankings.</p>
+      <p className="gs-section-lede">Your work is your signature. Draft privately and publish your research with a version history. Submissions with a specific screening concern go to a reviewer.</p>
     </div><button className="button button-light gs-create-btn" type="button" onClick={()=>begin()}>
       <Plus size={15}/> Create Contribution</button></header>
     {notice&&<p className="status-message" role="status">{notice}</p>}
@@ -231,7 +235,7 @@ export function SupabaseContributions({profile,userId}:Props) {
       <p>{tab==='drafts'?'No drafts yet. Start a private contribution.':
       tab==='in_review'?'Nothing submitted for review yet.':
       tab==='needs_revision'?'No reviewer revisions requested.':
-      tab==='published'?'Nothing published by moderators yet.':'No archived contributions.'}</p>
+      tab==='published'?'No published contributions yet.':'No archived contributions.'}</p>
       <button className="button button-outline" type="button" onClick={()=>begin()}><Plus size={14}/> Start a contribution</button>
     </div>:<ul className="gs-card-list">{shown.map(item=><li key={item.id} className="dashboard-panel">
       <div className="gs-section-head">
@@ -239,15 +243,16 @@ export function SupabaseContributions({profile,userId}:Props) {
           <h2>{item.title||'Untitled draft'}</h2>
           <p className="muted-note">Version {item.version} · Updated {new Date(item.updated_at).toLocaleDateString()}</p>
         </div>
-      </div><p>{item.summary||'Add your summary before submitting for review.'}</p>
+      </div><p>{item.summary||'Add your summary before publishing.'}</p>
       {item.status==='submitted'&&<div className="callout">
         <strong>Automated screening: </strong>
         {triage[item.id+':'+item.version]?.resolution==='cleared' ? 'Human investigation cleared' :
+         triage[item.id+':'+item.version]?.policy_version==='LGN-TRIAGE-2' ? 'Possible credential or private-key material' :
          triage[item.id+':'+item.version]?.recommendation==='investigate' ? 'Further human investigation required' :
          triage[item.id+':'+item.version]?.recommendation==='reject_candidate' ? 'Possible duplicate — human review required' :
          triage[item.id+':'+item.version]?.recommendation==='human_review' ? 'Routine human review' :
          'Screening pending'}
-        <p className="muted-note">Bot recommendations are not decisions. Only authorized humans can reject or publish your work.</p>
+        <p className="muted-note">A reviewer decides how to resolve the concern before held work can be published.</p>
       </div>}
       {reviewNotes[item.id]&&<div className="callout" role="note">
         <strong>Review decision: {reviewNotes[item.id].action.replaceAll('_',' ')}</strong>
@@ -296,12 +301,12 @@ export function SupabaseContributions({profile,userId}:Props) {
           <input id="ce-source" type="url" maxLength={2048} value={draft.source_url} onChange={e=>editorField('source_url',e.target.value)}/></div>
         <div className="field"><label htmlFor="ce-code">Code / technical artifacts (optional)</label>
           <textarea id="ce-code" rows={6} maxLength={50000} value={draft.code} onChange={e=>editorField('code',e.target.value)}/></div>
-        <div className="callout">To submit for review, add a title and at least one of: summary, description, code, or source link. Brief contributions are welcome. Work stays private until reviewed; only moderators can publish. Attachments and reviewer feedback are a separate migration.</div>
+        <div className="callout">Add a title and a summary, description, code, or source link. Brief research contributions are welcome. Code is displayed as text. A specific screening concern can hold the contribution for review.</div>
         <div className="gs-builder-actions">
           <button type="button" className="button button-outline" disabled={busy||editing?.status==='archived'} onClick={()=>{void save('draft');}}>
             <Save size={14}/> {busy?'Saving…':'Save draft'}</button>
           {editing?.status!=='archived'&&<button type="button" className="button button-light" disabled={busy}
-            onClick={()=>{void save('submitted');}}><Send size={14}/> Submit for review</button>}
+            onClick={()=>{void save('submitted');}}><Send size={14}/> Publish contribution</button>}
           <button className="gs-card-action" type="button" onClick={()=>setEditing(undefined)} disabled={busy}>Cancel</button>
         </div>
       </form></div>}

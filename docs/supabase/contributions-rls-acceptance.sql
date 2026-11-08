@@ -29,7 +29,7 @@ exception when check_violation or insufficient_privilege then
  insert into qa_results values('incomplete draft cannot be submitted',true);
 end $qa$;
 update public.ghost_contributions
-set summary=repeat('Clear research scope and method. ',2),
+set summary='-----BEGIN PRIVATE KEY----- synthetic fixture',
  body=repeat('Reproducible analysis and limitations. ',4),
  status='submitted' where title='A research contribution draft';
 insert into qa_results(test,passed)
@@ -40,9 +40,9 @@ and (select count(id)=2 from public.ghost_contribution_revisions);
 do $qa$
 begin
  update public.ghost_contributions set status='published' where title='A research contribution draft';
- insert into qa_results values('author cannot self-publish',false);
+ insert into qa_results values('author cannot directly publish held work',false);
 exception when check_violation or insufficient_privilege then
- insert into qa_results values('author cannot self-publish',true);
+ insert into qa_results values('author cannot directly publish held work',true);
 end $qa$;
 select set_config('request.jwt.claim.sub',(select id::text from qa_ghosts where kind='other'),true);
 insert into public.ghost_profiles(owner_id,handle)
