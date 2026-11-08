@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link } from 'react-router';
-import { CONTENT_LANGUAGES, DEFAULT_CONTENT_LANGUAGE } from '@/lib/languages';
+import { CONTENT_LANGUAGES, DEFAULT_CONTENT_LANGUAGE, saveReadingLanguage } from '@/lib/languages';
+import { LanguageSelector } from '@/components/language-selector';
 import { SupabaseMfaSettings } from './supabase-mfa';
 import { resetPasswordRedirect, supabaseBrowser, verifyEmailRedirect } from '@/lib/supabase-browser';
 
 export function SupabaseSettings({userId,email,handle,onDeactivated}:{userId:string;email:string;handle:string;onDeactivated:()=>void}) {
   const [language,setLanguage]=useState(DEFAULT_CONTENT_LANGUAGE);
+  const [readingLanguage,setReadingLanguage]=useState(DEFAULT_CONTENT_LANGUAGE);
   const [loading,setLoading]=useState(true);
   const [busy,setBusy]=useState(false);
   const [confirmSignOut,setConfirmSignOut]=useState(false);
@@ -21,11 +23,13 @@ export function SupabaseSettings({userId,email,handle,onDeactivated}:{userId:str
     void (async()=>{
       try{
         const {data,error}=await supabaseBrowser().from('ghost_profile_preferences')
-          .select('preferred_publication_language').eq('user_id',userId).single();
+          .select('preferred_publication_language,preferred_translation_language').eq('user_id',userId).single();
         if(error)throw error;
         if(active){
           setLanguage(CONTENT_LANGUAGES.some(item=>item.code===data.preferred_publication_language)
             ?data.preferred_publication_language:DEFAULT_CONTENT_LANGUAGE);
+          setReadingLanguage(CONTENT_LANGUAGES.some(item=>item.code===data.preferred_translation_language&&item.code!=='other')
+            ?data.preferred_translation_language:DEFAULT_CONTENT_LANGUAGE);
           setLoading(false);
         }
       }catch{
@@ -50,8 +54,8 @@ export function SupabaseSettings({userId,email,handle,onDeactivated}:{userId:str
     event.preventDefault();
     if(!CONTENT_LANGUAGES.some(item=>item.code===language))return;
     void change(()=>supabaseBrowser().from('ghost_profile_preferences')
-      .update({preferred_publication_language:language}).eq('user_id',userId).select('user_id').single(),
-      'Publication language saved.','Could not save your publication language.');
+      .update({preferred_publication_language:language,preferred_translation_language:readingLanguage}).eq('user_id',userId).select('user_id').single(),
+      'Language preferences saved.','Could not save your language preferences.',()=>saveReadingLanguage(readingLanguage));
   }
 
   function changeEmail(event:FormEvent<HTMLFormElement>){
@@ -129,7 +133,14 @@ export function SupabaseSettings({userId,email,handle,onDeactivated}:{userId:str
         onChange={event=>setLanguage(event.target.value)}>
         {CONTENT_LANGUAGES.map(item=><option key={item.code} value={item.code}>{item.native}</option>)}
       </select>
-      <button className="button button-light" disabled={loading||busy}>Save language</button>
+      <label htmlFor="settings-reading-language">Preferred article translation language</label>
+      <select id="settings-reading-language" disabled={loading||busy} value={readingLanguage}
+        onChange={event=>setReadingLanguage(event.target.value)}>
+        {CONTENT_LANGUAGES.filter(item=>item.code!=='other').map(item=><option key={item.code} value={item.code}>{item.native}</option>)}
+      </select>
+      <p>Choose the site interface language separately.</p>
+      <LanguageSelector />
+      <button className="button button-light" disabled={loading||busy}>Save languages</button>
     </form>
     <section className="dashboard-panel">
       <h2>Notifications</h2>

@@ -27,3 +27,13 @@ Deactivation disables the member's private access and new activity immediately a
 - [ ] Complete hands-on verification before production release.
 
 - [x] Apply [account controls](settings-account-controls.sql) to `lgn-development` as `20261108135150_phase1_settings_account_controls`. All 12 [account controls assertions](settings-account-controls-acceptance.sql) and 23 existing identity assertions passed against the installed schema.
+
+## Visitor interface and article translation
+
+- [ ] Use the header globe while signed out. Verify the built-in English, French, Spanish and German interface strings. On a browser with the Translator API, choose an additional supported language and verify translated interface strings and library headings persist after refresh.
+- [ ] Publish a synthetic contribution in its original language. On its public page, select **Translate article** and a target language. Confirm existing saved translations can be read on other browsers and automatic translation works for a supported browser language pair.
+- [ ] Confirm title, summary and prose change while the separately rendered code, fenced and inline code, links and technical identifiers remain original. Select **Show original** and verify nothing was changed in Supabase.
+- [ ] Save distinct publication and reading languages in Settings. Confirm a new draft uses the publication language and the article selector defaults to the reading language.
+- [ ] In an unsupported browser, confirm automatic article translation reports unavailability and saved translations remain usable.
+
+Automatic translation uses the browser's on-device Translator API. It does not send articles or private account text to a translation service. Site language changes cover the localized interface strings and translated library headings. Unlocalized interface copy can remain English. The site setting does not translate member posts automatically.

@@ -19,23 +19,19 @@ import {
 	useContext,
 	useEffect,
 	useState,
+	useRef,
 	type ReactNode,
 } from 'react';
 
-export type InterfaceLanguage = 'en' | 'fr' | 'es' | 'de';
+import { CONTENT_LANGUAGES } from '@/lib/languages';
+import { withTranslator } from '@/lib/browser-translation';
+import { librarySections } from '@/data/navigation';
 
-export const LANGUAGES: {
-	code: InterfaceLanguage;
-	label: string;
-	native: string;
-}[] = [
-	{ code: 'en', label: 'English', native: 'English' },
-	{ code: 'fr', label: 'French', native: 'Français' },
-	{ code: 'es', label: 'Spanish', native: 'Español' },
-	{ code: 'de', label: 'German', native: 'Deutsch' },
-];
+export type InterfaceLanguage = string;
+type BuiltInLanguage = 'en' | 'fr' | 'es' | 'de';
 
-const DEFAULT_LANG: InterfaceLanguage = 'en';
+export const LANGUAGES = CONTENT_LANGUAGES.filter(language => language.code !== 'other');
+const DEFAULT_LANG = 'en';
 const STORAGE_KEY = 'lgn-lang';
 
 type Dict = Record<string, string>;
@@ -300,47 +296,85 @@ const de: Dict = {
 	'profile.language': 'Hauptsprache',
 };
 
-const translations: Record<InterfaceLanguage, Dict> = { en, fr, es, de };
+const translations: Record<BuiltInLanguage, Dict> = { en, fr, es, de };
+const publicHeadings = Object.values(librarySections).flatMap(section =>
+  [section.title, section.eyebrow, section.description, 'subtitle' in section ? section.subtitle : ''].filter(Boolean));
+const interfaceSource = {
+  ...Object.fromEntries([...publicHeadings,'Share research','Propose an artifact','Start a project','Draft an exercise']
+    .map(label => [label,label])),
+  ...en,
+};
+const cacheKey = (lang:string) => 'lgn-interface-v1:'+lang;
+
+export function hasBuiltInInterfaceLanguage(lang:string):lang is BuiltInLanguage {
+  return Object.prototype.hasOwnProperty.call(translations,lang);
+}
+
+function readMachineDictionary(lang:string):Dict|null {
+  try {
+    const value=JSON.parse(localStorage.getItem(cacheKey(lang))??'null');
+    if(!value||!Object.keys(interfaceSource).every(key=>typeof value[key]==='string'))return null;
+    return value;
+  } catch { return null; }
+}
 
 type I18nContextValue = {
 	lang: InterfaceLanguage;
-	setLang: (lang: InterfaceLanguage) => void;
+	setLang: (lang: InterfaceLanguage) => Promise<void>;
+	translating: boolean;
+	languageError: string;
 	t: (key: string, vars?: Record<string, string | number>) => string;
 };
 
 const I18nContext = createContext<I18nContextValue | null>(null);
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-	const [lang, setLangState] = useState<InterfaceLanguage>(DEFAULT_LANG);
+	const [lang,setLangState]=useState<InterfaceLanguage>(DEFAULT_LANG);
+	const [machine,setMachine]=useState<Dict|null>(null);
+	const [translating,setTranslating]=useState(false);
+	const [languageError,setLanguageError]=useState('');
+	const running=useRef(false);
 
-	// Apply the stored preference after hydration — never during the first
-	// render, so the server output (English) and the first client render match.
-	useEffect(() => {
-		try {
-			const stored = localStorage.getItem(STORAGE_KEY) as InterfaceLanguage | null;
-			if (stored && translations[stored]) setLangState(stored);
-		} catch {
-			/* localStorage unavailable — keep default. */
+	useEffect(()=>{
+		try{
+			const stored=localStorage.getItem(STORAGE_KEY);
+			if(!stored||!LANGUAGES.some(item=>item.code===stored))return;
+			if(hasBuiltInInterfaceLanguage(stored)){setLangState(stored);return;}
+			const cached=readMachineDictionary(stored);
+			if(cached){setMachine(cached);setLangState(stored);}
+		}catch{/* Keep the default if storage is unavailable. */}
+	},[]);
+
+	useEffect(()=>{document.documentElement.lang=lang;},[lang]);
+
+	const setLang=useCallback(async(next:InterfaceLanguage)=>{
+		if(running.current||!LANGUAGES.some(item=>item.code===next))return;
+		setLanguageError('');
+		let dictionary:Dict|null=null;
+		if(!hasBuiltInInterfaceLanguage(next)){
+			running.current=true;setTranslating(true);
+			try{
+				dictionary=readMachineDictionary(next)??await withTranslator('en',next,async translate=>{
+					const entries=Object.entries(interfaceSource);
+					const result:Dict={};
+					for(const [key,value] of entries)result[key]=await translate(value);
+					return result;
+				});
+			}catch(e){
+				setLanguageError(e instanceof Error?e.message:'Interface translation failed.');
+				return;
+			}finally{running.current=false;setTranslating(false);}
 		}
-	}, []);
-
-	// Keep <html lang> in sync with the active interface language.
-	useEffect(() => {
-		if (typeof document !== 'undefined') document.documentElement.lang = lang;
-	}, [lang]);
-
-	const setLang = useCallback((next: InterfaceLanguage) => {
-		setLangState(next);
-		try {
-			localStorage.setItem(STORAGE_KEY, next);
-		} catch {
-			/* ignore */
-		}
-	}, []);
+		setMachine(dictionary);setLangState(next);
+		try{
+			if(dictionary)localStorage.setItem(cacheKey(next),JSON.stringify(dictionary));
+			localStorage.setItem(STORAGE_KEY,next);
+		}catch{/* The current tab can still use the translation. */}
+	},[]);
 
 	const t = useCallback(
 		(key: string, vars?: Record<string, string | number>) => {
-			let str = translations[lang]?.[key] ?? translations[DEFAULT_LANG][key] ?? key;
+			let str = (machine??(hasBuiltInInterfaceLanguage(lang)?translations[lang]:en))[key] ?? en[key] ?? key;
 			if (vars) {
 				for (const [k, v] of Object.entries(vars)) {
 					str = str.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
@@ -348,11 +382,11 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 			}
 			return str;
 		},
-		[lang],
+		[lang,machine],
 	);
 
 	return (
-		<I18nContext.Provider value={{ lang, setLang, t }}>{children}</I18nContext.Provider>
+		<I18nContext.Provider value={{ lang, setLang, t, translating, languageError }}>{children}</I18nContext.Provider>
 	);
 }
 

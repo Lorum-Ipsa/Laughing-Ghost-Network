@@ -7,7 +7,7 @@ import { publicSupabaseContribution, publicSupabaseMaterials } from '@/lib/supab
 import { Article } from '@/components/work/article';
 import { WorkHeading } from '@/components/work/work-heading';
 import { TranslateBar } from '@/components/work/translate-bar';
-import type { Work } from '@/lib/network';
+import type { Translation } from '@/lib/network';
 
 const isSupabaseId = (id:string) => /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(id);
 
@@ -42,8 +42,8 @@ export function meta({ matches, location, loaderData }: Route.MetaArgs) {
 
 export default function WorkDetail({ loaderData }: Route.ComponentProps) {
   const { work, translations, attachments, related, networkRelated, contributorCount } = loaderData;
-  const [translationId, setTranslationId] = useState<string|null>(null);
-  const activeTranslation=translations.find(item=>item.id===translationId)??null;
+  const [selection,setSelection]=useState<{translation:Translation;version:typeof work.version}|null>(null);
+  const activeTranslation=selection?.translation.work===work.id&&selection.version===work.version?selection.translation:null;
   // The original publication is authoritative. A translation only overrides the
   // prose fields (title/summary/body); code and all technical artifacts stay
   // verbatim from the original `work`.
@@ -53,7 +53,8 @@ export default function WorkDetail({ loaderData }: Route.ComponentProps) {
   return (
     <main>
       <WorkHeading work={displayWork} />
-      <TranslateBar work={work} translations={translations} active={activeTranslation} onSelect={item=>setTranslationId(item?.id??null)} />
+      <TranslateBar key={work.id+':'+work.version} work={work} translations={translations} active={activeTranslation}
+        onSelect={item=>setSelection(item?{translation:item,version:work.version}:null)} />
       <Article work={displayWork} translation={activeTranslation} related={related} networkRelated={networkRelated} contributorCount={contributorCount} />
       {attachments.length>0&&<section className="rail">
         <h2>Text attachments</h2>

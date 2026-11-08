@@ -34,6 +34,7 @@ export const CONTENT_LANGUAGES: ContentLanguage[] = [
   { code: 'vi', label: 'Vietnamese', native: 'Tiếng Việt' },
   { code: 'id', label: 'Indonesian', native: 'Bahasa Indonesia' },
   { code: 'fa', label: 'Persian', native: 'فارسی' },
+  { code: 'ro', label: 'Romanian', native: 'Română' },
   { code: 'other', label: 'Other', native: 'Other' },
 ];
 
@@ -52,4 +53,18 @@ export function contentLanguageLabel(code?: string | null): string {
 export function contentLanguageName(code?: string | null): string {
   if (!code) return '';
   return CONTENT_LANGUAGES.find((l) => l.code === code)?.label || code;
+}
+
+const READING_LANGUAGE_KEY='lgn-reading-language';
+
+export function readReadingLanguage(){
+  try{
+    const value=localStorage.getItem(READING_LANGUAGE_KEY);
+    return CONTENT_LANGUAGES.find(item=>item.code===value&&item.code!=='other')?.code??'';
+  }catch{return '';}
+}
+
+export function saveReadingLanguage(language:string){
+  try{localStorage.setItem(READING_LANGUAGE_KEY,language);}
+  catch{/* The account preference can still be saved. */}
 }

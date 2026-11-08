@@ -52,6 +52,8 @@ jobs:
         run: bun test apps/web/tests/dm-crypto.test.ts
       - name: Verify Research and Arsenal search
         run: bun test apps/web/tests/work-search.test.ts
+      - name: Verify translation preserves technical content
+        run: bun test apps/web/tests/browser-translation.test.ts
       - name: Build SSR frontend
         run: bun run build
       - name: Typecheck
