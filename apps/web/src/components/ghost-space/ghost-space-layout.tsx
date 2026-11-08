@@ -8,6 +8,7 @@ import {
 	Network as NetworkIcon,
 	Bell,
 	Settings,
+	ShieldCheck,
 	ArrowUpRight,
 	LogOut,
 } from 'lucide-react';
@@ -17,6 +18,7 @@ export type GhostSpaceSection =
 	| 'dashboard'
 	| 'profile'
 	| 'contributions'
+	| 'review'
 	| 'projects'
 	| 'table-talks'
 	| 'network'
@@ -27,6 +29,7 @@ const NAV: { section: GhostSpaceSection; label: string; icon: typeof LayoutDashb
 	{ section: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
 	{ section: 'profile', label: 'My Profile', icon: User },
 	{ section: 'contributions', label: 'Contributions', icon: FileText },
+	{ section: 'review', label: 'Review queue', icon: ShieldCheck },
 	{ section: 'projects', label: 'Projects', icon: FolderGit2 },
 	{ section: 'table-talks', label: 'Table Talks', icon: MessagesSquare },
 	{ section: 'network', label: 'Network', icon: NetworkIcon },
@@ -44,12 +47,14 @@ const NAV: { section: GhostSpaceSection; label: string; icon: typeof LayoutDashb
  */
 export function GhostSpaceLayout({
 	section,
+	canReview=false,
 	handle,
 	publicProfilePath,
 	onSignOut,
 	children,
 }: {
 	section: GhostSpaceSection;
+	canReview?: boolean;
 	handle: string;
 	publicProfilePath: string;
 	onSignOut: () => void;
@@ -66,7 +71,7 @@ export function GhostSpaceLayout({
 					</div>
 				</div>
 				<nav className="ghost-space-nav">
-					{NAV.map(({ section: key, label, icon: Icon }) => (
+					{NAV.filter(item=>item.section!=='review'||canReview).map(({ section: key, label, icon: Icon }) => (
 						<Link
 							key={key}
 							to={`/ghost-space?section=${key}`}

@@ -6,6 +6,7 @@ import { useSupabaseAuth } from '@/hooks/use-supabase-auth';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { SupabaseProfileEditor } from '@/components/ghost-space/profile/supabase-profile-editor';
 import { SupabaseContributions } from '@/components/ghost-space/contributions/supabase-contributions';
+import { SupabaseReviewQueue } from '@/components/ghost-space/review/supabase-review-queue';
 import {
   claimGhostProfile, findMyGhostProfile, HANDLE_PATTERN, signupDetails,
   type GhostIdentity,
@@ -13,7 +14,7 @@ import {
 import { GhostSpaceLayout, type GhostSpaceSection } from '@/components/ghost-space/ghost-space-layout';
 
 const sections: GhostSpaceSection[] = [
-  'dashboard', 'profile', 'contributions', 'projects', 'table-talks',
+  'dashboard', 'profile', 'contributions', 'review', 'projects', 'table-talks',
   'network', 'notifications', 'settings',
 ];
 const pendingTitles: Record<string, string> = {
@@ -35,6 +36,16 @@ export function SupabaseGhostSpaceDashboard() {
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
   const [newHandle, setNewHandle] = useState('');
+  const [canReview,setCanReview] = useState(false);
+
+  useEffect(() => {
+    if (!user?.id) { setCanReview(false); return; }
+    let active=true;
+    void supabaseBrowser().rpc('can_review_contributions').then(({data,error}) => {
+      if (active) setCanReview(!error && data===true);
+    }).catch(()=>{if(active)setCanReview(false);});
+    return()=>{active=false;};
+  }, [user?.id]);
 
   useEffect(() => {
     if (!user?.email_confirmed_at) return;
@@ -90,7 +101,7 @@ export function SupabaseGhostSpaceDashboard() {
   </main>;
 
   return (
-    <GhostSpaceLayout section={section} handle={profile?.handle || 'New Ghost'}
+    <GhostSpaceLayout section={section} canReview={canReview} handle={profile?.handle || 'New Ghost'}
       publicProfilePath={profile ? `/ghosts/${encodeURIComponent(profile.handle)}` : ""} onSignOut={() => { void signOut(); }}>
       {notice && <p role="status" className="status-message">{notice}</p>}
       {error && <p role="alert" className="status-message error-message">{error}</p>}
@@ -121,7 +132,7 @@ export function SupabaseGhostSpaceDashboard() {
               </div>
               <div className="form-panel"><h2>What's available now</h2>
                 <p>Registration, email confirmation, the complete Ghost profile editor, and contribution drafting/revision history are connected to Supabase.</p>
-                <p className="muted-note">Contributions support private drafts and submission for review. Reviewer publication, projects, Table Talks, notifications, custom avatar uploads, and additional account settings are not yet migrated.</p>
+                <p className="muted-note">Contributions support private drafts and submission for review. Review queue and publishing are now available to authorized reviewers. Projects, Table Talks, notifications, custom avatar uploads and advanced settings remain in development.</p>
               </div>
             </div>
             <div className="gs-grid-side">
@@ -141,6 +152,8 @@ export function SupabaseGhostSpaceDashboard() {
         }} />
       ) : section === 'contributions' ? (
         <SupabaseContributions profile={profile} userId={user.id} />
+      ) : section === 'review' ? (
+        <SupabaseReviewQueue profile={profile} />
       ) : section === 'settings' ? (
         <div className="gs-placeholder"><span className="eyebrow">GHOST SPACE / SETTINGS</span><h1>Account settings.</h1>
           <p>Your account is authenticated through Supabase. Email confirmation is required, and your public handle cannot be changed directly.</p>

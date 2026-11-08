@@ -12,6 +12,8 @@ const REVISION_FIELDS = 'id,contribution_id,version,title,summary,body,code,stat
 type BaseRow = Database['public']['Tables']['ghost_contributions']['Row'];
 export type GhostContribution = Omit<BaseRow,'owner_id'|'deleted_at'>;
 type Revision = Omit<Database['public']['Tables']['ghost_contribution_revisions']['Row'],'owner_id'>;
+type ReviewNote = Pick<Database['public']['Tables']['ghost_contribution_reviews']['Row'],
+  'id'|'contribution_id'|'action'|'note'|'created_at'>;
 type Draft = Pick<GhostContribution,'kind'|'title'|'language'|'domain'|'summary'|'body'|'tags'|'source_url'|'code'>;
 type WorkState = 'draft'|'submitted'|'revision_requested'|'rejected'|'published'|'archived';
 type Tab = 'drafts'|'in_review'|'needs_revision'|'published'|'archived';
@@ -74,6 +76,7 @@ function Preview({item,onClose}:{item:GhostContribution,onClose:()=>void}) {
 type Props={profile:GhostIdentity;userId:string};
 export function SupabaseContributions({profile,userId}:Props) {
   const [items,setItems]=useState<GhostContribution[]>([]);
+  const [reviewNotes,setReviewNotes]=useState<Record<string,ReviewNote>>({});
   const [loading,setLoading]=useState(true);
   const [tab,setTab]=useState<Tab>('drafts');
   const [editing,setEditing]=useState<GhostContribution|null|undefined>(undefined);
@@ -87,14 +90,27 @@ export function SupabaseContributions({profile,userId}:Props) {
   useEffect(()=>{
     let alive=true;
     setLoading(true);setError('');
-    void supabaseBrowser().from('ghost_contributions')
-      .select(FIELDS).eq('profile_id',profile.id).order('updated_at',{ascending:false})
-      .then(({data,error:fetchError})=>{
+    void (async()=>{
+      try {
+        const api=supabaseBrowser();
+        const {data,error:fetchError}=await api.from('ghost_contributions')
+          .select(FIELDS).eq('profile_id',profile.id).order('updated_at',{ascending:false});
+        if(fetchError)throw fetchError;
         if(!alive)return;
-        if(fetchError)setError(fetchError.message);
-        else setItems((data||[]) as GhostContribution[]);
-        setLoading(false);
-      });
+        setItems((data||[]) as GhostContribution[]);
+        const ids=(data||[]).map(item=>item.id);
+        if(ids.length){
+          const {data:notes,error:notesError}=await api.from('ghost_contribution_reviews')
+            .select('id,contribution_id,action,note,created_at').in('contribution_id',ids)
+            .order('created_at',{ascending:false});
+          if(notesError)throw notesError;
+          const latest:Record<string,ReviewNote>={};
+          for(const note of notes||[]) if(!latest[note.contribution_id])latest[note.contribution_id]=note;
+          if(alive)setReviewNotes(latest);
+        } else setReviewNotes({});
+      }catch(e){if(alive)setError(e instanceof Error?e.message:'Could not load contributions.');}
+      finally{if(alive)setLoading(false);}
+    })();
     return()=>{alive=false;};
   },[profile.id]);
   const counts=useMemo(()=>{
@@ -119,6 +135,15 @@ export function SupabaseContributions({profile,userId}:Props) {
       .select(FIELDS).eq('profile_id',profile.id).order('updated_at',{ascending:false});
     if(error)throw error;
     setItems((data||[]) as GhostContribution[]);
+    const ids=(data||[]).map(item=>item.id);
+    if(!ids.length) {setReviewNotes({});return;}
+    const {data:notes,error:notesError}=await supabaseBrowser().from('ghost_contribution_reviews')
+      .select('id,contribution_id,action,note,created_at').in('contribution_id',ids)
+      .order('created_at',{ascending:false});
+    if(notesError)throw notesError;
+    const latest:Record<string,ReviewNote>={};
+    for(const note of notes||[]) if(!latest[note.contribution_id])latest[note.contribution_id]=note;
+    setReviewNotes(latest);
   }
   async function save(target:'draft'|'submitted') {
     if(busy)return;
@@ -199,6 +224,10 @@ export function SupabaseContributions({profile,userId}:Props) {
           <p className="muted-note">Version {item.version} · Updated {new Date(item.updated_at).toLocaleDateString()}</p>
         </div>
       </div><p>{item.summary||'Add your summary before submitting for review.'}</p>
+      {reviewNotes[item.id]&&<div className="callout" role="note">
+        <strong>Review decision: {reviewNotes[item.id].action.replaceAll('_',' ')}</strong>
+        {reviewNotes[item.id].note&&<p style={{whiteSpace:'pre-wrap'}}>{reviewNotes[item.id].note}</p>}
+      </div>}
       <div className="gs-builder-actions">
         <button type="button" className="button button-outline" onClick={()=>setPreview(item)}><Eye size={14}/> Preview</button>
         {item.status!=='published'&&<button type="button" className="button button-light"
