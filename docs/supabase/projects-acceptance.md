@@ -2,12 +2,12 @@
 
 The Supabase workspace supports private drafts, public briefs, recruiting, role applications, direct invitations, private watch lists, task assignments, progress updates, and milestones. Invitations appear in the invited Ghost's Projects workspace. They do not send email. Watching saves a project to the member's workspace without enrolling them or sending notifications. Task boards, milestones, updates, and member records are not exposed in the public listing.
 
-Acceptance and persistent rollout are deferred until the final approval phase. Keep PR #3 in draft until the maintainer approves merging.
+Development SQL and automated database acceptance are complete. Hands-on browser acceptance, final approval, and production deployment are pending. Keep PR #3 in draft until the maintainer approves merging.
 
 ## Development rollout and checks
 
-- [ ] Obtain approval and apply these SQL files to `lgn-development` in order. [Workspace](projects-workspace.sql), [assignments and updates](projects-collaboration.sql), [roles, invitations, watches and milestones](projects-planning.sql).
-- [ ] Run the [rollback-only SQL acceptance](projects-workspace-acceptance.sql). To run before persistent rollout, insert all three SQL files in order immediately after `begin;` in a temporary copy of the script.
+- [x] Apply these SQL files to `lgn-development` in order. The remote migration is `20261108100006_phase1_projects_workspace`. [Workspace](projects-workspace.sql), [assignments and updates](projects-collaboration.sql), [roles, invitations, watches and milestones](projects-planning.sql).
+- [x] Pass all 27 [rollback-only SQL checks](projects-workspace-acceptance.sql). To run before persistent rollout, insert all three SQL files in order immediately after `begin;` in a temporary copy of the script.
 - [ ] Run the frontend build, typecheck and preview smoke checks.
 - [ ] As verified Ghost A, create a private project, task, and milestone. Confirm none are visible to a signed-out visitor.
 - [ ] As A, publish the brief, enable recruiting, and post a role. Confirm a visitor sees the brief and open role without private collaboration data.

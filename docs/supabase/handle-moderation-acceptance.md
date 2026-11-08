@@ -8,16 +8,17 @@ Uniqueness is case-insensitive: `Ghost!One` and `ghost!one` cannot both be claim
 
 To test the UI, register a **separate** test account using an address you control and a handle such as `Laughing//Ghost`. Verify the email, open Ghost Space, the public Ghost profile, and Search the Network. Check capitalization. A duplicate handle in a different case must be rejected at claim time.
 
-## Deferred rollout and browser checklist
+## Development rollout and hands-on browser checklist
 
-- [ ] After approval, apply [the version guard](review-version-guard.sql), [the contribution workflow SQL](publish-research-with-targeted-screening.sql), and [publication materials](contribution-publication-materials.sql), in that order, to `lgn-development`.
+- [x] Apply [the version guard](review-version-guard.sql), [the contribution workflow SQL](publish-research-with-targeted-screening.sql), and [publication materials](contribution-publication-materials.sql), in that order, to `lgn-development` as `20261108095951_phase1_contributions_workflow`.
+- [x] Pass all 68 rollback-only contribution, moderation, and reviewer checks against the deployed development schema.
 - [ ] Confirm the private preview points to `lgn-development` and provision a dedicated verified test reviewer with explicit approval.
 - [ ] Run the two-account browser steps below for publication, holds, reviewer permissions, revisions, and deletion.
 - [ ] Separately authorize temporary moderator access for the report and takedown test. Revoke elevated test roles after acceptance.
 
 ## Browser acceptance for direct publication and review
 
-Use a private Codespaces preview and the dedicated `lgn-development` project. This checklist requires the pending SQL changes in the order listed in the [publication policy](automated-moderation-policy.md). Confirm the preview points to development before submitting. Use two isolated browser sessions and synthetic content. Published fixtures are publicly readable through the development API.
+Use a private Codespaces preview and the dedicated `lgn-development` project. The SQL changes are installed on the development project. Confirm the preview points to development before submitting. Use two isolated browser sessions and synthetic content. Published fixtures are publicly readable through the development API.
 
 | Session | Account |
 | --- | --- |

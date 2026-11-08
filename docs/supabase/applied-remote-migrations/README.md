@@ -20,3 +20,12 @@ The remaining applied versions are recorded here:
 | `20261108081854` | Event-triggered deterministic bot triage, reviewer investigation clearance and audit rules |
 
 **Do not replay** these directly on `lgn-development`. Resolve a reviewed Supabase CLI baseline before using them in a fresh staging environment. Future migrations should be generated and tested with the version of the CLI actually installed, with authorization and rollback tests.
+
+## Phase 1 development rollout
+
+| Remote version | Migration | Ordered repository sources |
+| --- | --- | --- |
+| `20261108095951` | `phase1_contributions_workflow` | [Version guard](../review-version-guard.sql), [publishing and moderation](../publish-research-with-targeted-screening.sql), [materials](../contribution-publication-materials.sql) |
+| `20261108100006` | `phase1_projects_workspace` | [Workspace](../projects-workspace.sql), [collaboration](../projects-collaboration.sql), [planning](../projects-planning.sql) |
+
+Each row records a single development migration assembled from its linked SQL files in order. Do not replay them on the initialized development project. All 95 automated SQL assertions passed in rollback-only fixtures against the applied schema. Browser and production release acceptance remain pending.
