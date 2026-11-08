@@ -87,6 +87,7 @@ export function SupabaseContributions({profile,userId}:Props) {
   const [tab,setTab]=useState<Tab>('drafts');
   const [editing,setEditing]=useState<GhostContribution|null|undefined>(undefined);
   const [draft,setDraft]=useState<Draft>(NEW_DRAFT);
+  const [defaultLanguage,setDefaultLanguage]=useState(NEW_DRAFT.language);
   const [preview,setPreview]=useState<GhostContribution|null>(null);
   const [revisionsFor,setRevisionsFor]=useState<GhostContribution|null>(null);
   const [revisions,setRevisions]=useState<Revision[]>([]);
@@ -102,8 +103,13 @@ export function SupabaseContributions({profile,userId}:Props) {
     void (async()=>{
       try {
         const api=supabaseBrowser();
-        const {data,error:fetchError}=await api.from('ghost_contributions')
-          .select(FIELDS).eq('profile_id',profile.id).order('updated_at',{ascending:false});
+        const [work,preferences]=await Promise.all([
+          api.from('ghost_contributions').select(FIELDS).eq('profile_id',profile.id).order('updated_at',{ascending:false}),
+          api.from('ghost_profile_preferences').select('preferred_publication_language').eq('user_id',userId).maybeSingle(),
+        ]);
+        const {data,error:fetchError}=work;
+        const preferred=preferences.data?.preferred_publication_language;
+        if(alive)setDefaultLanguage(CONTENT_LANGUAGES.some(item=>item.code===preferred)&&preferred?preferred:NEW_DRAFT.language);
         if(fetchError)throw fetchError;
         if(!alive)return;
         setItems((data||[]) as GhostContribution[]);
@@ -128,7 +134,7 @@ export function SupabaseContributions({profile,userId}:Props) {
       finally{if(alive)setLoading(false);}
     })();
     return()=>{alive=false;};
-  },[profile.id]);
+  },[profile.id,userId]);
   const counts=useMemo(()=>{
     const result={drafts:0,in_review:0,needs_revision:0,published:0,archived:0};
     for(const item of items){
@@ -142,7 +148,7 @@ export function SupabaseContributions({profile,userId}:Props) {
     setDraft(item?{
       kind:item.kind,title:item.title,language:item.language,domain:item.domain,summary:item.summary,
       body:item.body,tags:item.tags,source_url:item.source_url,code:item.code
-    }:NEW_DRAFT);
+    }:{...NEW_DRAFT,language:defaultLanguage});
     setEditing(item||null);
     setError('');setNotice('');
   }
@@ -240,7 +246,7 @@ export function SupabaseContributions({profile,userId}:Props) {
       <span className="eyebrow"><span className="tiny-dot"/> GHOST SPACE / CONTRIBUTIONS</span>
       <h1>Contributions.</h1>
       <p className="gs-section-lede">Your work is your signature. Draft privately and publish your research with a version history. Submissions with a specific screening concern go to a reviewer.</p>
-    </div><button className="button button-light gs-create-btn" type="button" onClick={()=>begin()}>
+    </div><button className="button button-light gs-create-btn" type="button" disabled={loading} onClick={()=>begin()}>
       <Plus size={15}/> Create Contribution</button></header>
     {notice&&<p className="status-message" role="status">{notice}</p>}
     {error&&<p className="status-message error-message" role="alert">{error}</p>}

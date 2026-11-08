@@ -5,6 +5,7 @@ import { ArrowUpRight } from 'lucide-react';
 import { useSupabaseAuth } from '@/hooks/use-supabase-auth';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { SupabaseProfileEditor } from '@/components/ghost-space/profile/supabase-profile-editor';
+import { SupabaseSettings } from '@/components/ghost-space/settings/supabase-settings';
 import { SupabaseContributions } from '@/components/ghost-space/contributions/supabase-contributions';
 import { SupabaseNotifications } from '@/components/ghost-space/notifications/supabase-notifications';
 import { SupabaseMessages } from '@/components/ghost-space/messages/supabase-messages';
@@ -167,11 +168,7 @@ export function SupabaseGhostSpaceDashboard() {
       ) : section === 'review' ? (
         <SupabaseReviewQueue profile={profile} />
       ) : section === 'settings' ? (
-        <div className="gs-placeholder"><span className="eyebrow">GHOST SPACE / SETTINGS</span><h1>Account settings.</h1>
-          <p>Your account is authenticated through Supabase. Email confirmation is required, and your public handle cannot be changed directly.</p>
-          <p>More private preferences, account recovery controls, session management and multi-factor settings are scheduled for the next migration stage.</p>
-          <Link className="button button-outline" to="/ghost-space?section=profile">Edit public profile</Link>
-        </div>
+        <SupabaseSettings key={user.id} userId={user.id} email={user.email??''} handle={profile.handle} />
       ) : null}
     </GhostSpaceLayout>
   );
