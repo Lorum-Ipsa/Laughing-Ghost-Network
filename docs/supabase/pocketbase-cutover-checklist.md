@@ -6,7 +6,7 @@ Supabase is the target runtime database. Remove each PocketBase path after its S
 | --- | --- | --- |
 | Auth, Ghost Space, contribution drafts, screening, deletion, reports | Supabase code in draft PR | Apply pending development SQL and run [browser acceptance](handle-moderation-acceptance.md) |
 | Research, Arsenal, Supabase article IDs | Supabase reads | Reconcile historical public work and URLs |
-| Published article translations and attachments | Pending | Preserve original code, attribution and language. Define private upload access, scanning, and safe downloads |
+| Published article translations and text attachments | Supabase code in draft PR | Apply materials SQL and verify browser reads and safe downloads. Historical imports and binary uploads are separate |
 | Homepage, directory fallback, sitemap, legacy article/profile IDs | Mixed or PocketBase | Import authorized public profiles and work, resolve old IDs and handles, then remove legacy reads |
 | Projects, Table Talks, participation | PocketBase or dashboard placeholder | Build Projects first after Contributions, then migrate Table Talks and participation |
 | Collaboration, notifications, legacy account/admin and remaining operations | Legacy or pending | Replace data access with Supabase and verify role boundaries |

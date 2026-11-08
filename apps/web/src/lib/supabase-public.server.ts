@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { supabasePublicConfig } from '@/lib/supabase-browser';
 import type { Database } from '@/lib/supabase.database.types';
-import type { DirectoryGhost, GhostProfile, Work, WorkKind } from '@/lib/network';
+import type { DirectoryGhost, GhostProfile, Translation, Work, WorkKind } from '@/lib/network';
 import { KIND_ORDER, kindLabels, locationTokens } from '@/lib/network';
 
 // Explicit public-only columns. Auth IDs, role state, deleted_at and email are
@@ -128,4 +128,36 @@ export async function publicSupabaseContribution(id:string):Promise<Work|null>{
   if(authorError)throw authorError;
   if(!author)return null;
   return asLegacyWork(data as PublicContribution,asLegacyProfile(author as PublicGhostRow));
+}
+
+export async function publicSupabaseMaterials(id:string,version:number) {
+  const api=publicApi();
+  if(!api)return {translations:[],attachments:[]};
+  const [translated,attached]=await Promise.all([
+    api.from('ghost_contribution_translations')
+      .select('id,contribution_id,language,title,summary,body,source,created_at')
+      .eq('contribution_id',id).eq('version',version).order('language'),
+    api.from('ghost_contribution_text_attachments').select('id,filename')
+      .eq('contribution_id',id).eq('version',version).order('filename'),
+  ]);
+  // Existing articles remain available while the optional materials migration
+  // is pending in an environment. Other API errors still surface.
+  if(translated.error&&translated.error.code!=='PGRST205')throw translated.error;
+  if(attached.error&&attached.error.code!=='PGRST205')throw attached.error;
+  const translations:Translation[]=(translated.data??[]).map(row=>({
+    id:row.id,work:row.contribution_id,language:row.language,title:row.title,
+    summary:row.summary,body:row.body,source:row.source==='human'?'human':'machine',
+    created:row.created_at,updated:row.created_at,
+  }));
+  return {translations,attachments:attached.data??[]};
+}
+
+export async function publicSupabaseTextAttachment(workId:string,id:string) {
+  const api=publicApi();
+  if(!api)return null;
+  const {data,error}=await api.from('ghost_contribution_text_attachments').select('filename,content')
+    .eq('contribution_id',workId).eq('id',id).maybeSingle();
+  if(error?.code==='22P02'||error?.code==='PGRST205')return null;
+  if(error)throw error;
+  return data;
 }

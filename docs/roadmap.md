@@ -11,7 +11,7 @@
 
 ## 3. Contributions
 
-The draft includes private drafts, direct publication, targeted review, version history, owner deletion and Supabase-backed Research and Arsenal listings. Deletion removes work from the workspace, review queue and public Supabase surfaces and retains internal audit history. The pending publication SQL and version guard require development rollout and two-account browser acceptance. Published edits reuse the existing screen and public URL. Supabase reports and moderator takedown replace the PocketBase report write path. Translations, attachment handling, and browser acceptance remain in Contributions before Projects.
+The draft includes private drafts, direct publication, targeted review, version history, owner deletion and Supabase-backed Research and Arsenal listings. Deletion removes work from the workspace, review queue and public Supabase surfaces and retains internal audit history. The pending publication SQL and version guard require development rollout and two-account browser acceptance. Published edits reuse the existing screen and public URL. Supabase reports and moderator takedown replace the PocketBase report write path. Versioned prose translations and text attachments use Supabase and preserve the original code. Development rollout and browser acceptance remain before Projects. Binary attachments are outside the current text workflow.
 
 Historical PocketBase content has not been imported. Research and Arsenal read Supabase, so any historical listing entries need a verified data import to appear there. The homepage, sitemap, legacy public profile and article paths, and other public libraries still have legacy readers.
 

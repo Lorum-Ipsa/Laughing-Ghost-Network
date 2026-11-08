@@ -10,14 +10,14 @@ To test the UI, register a **separate** test account using an address you contro
 
 ## Deferred rollout and browser checklist
 
-- [ ] After approval, apply [the version guard](review-version-guard.sql) and [the contribution workflow SQL](publish-research-with-targeted-screening.sql), in that order, to `lgn-development`.
+- [ ] After approval, apply [the version guard](review-version-guard.sql), [the contribution workflow SQL](publish-research-with-targeted-screening.sql), and [publication materials](contribution-publication-materials.sql), in that order, to `lgn-development`.
 - [ ] Confirm the private preview points to `lgn-development` and provision a dedicated verified test reviewer with explicit approval.
 - [ ] Run the two-account browser steps below for publication, holds, reviewer permissions, revisions, and deletion.
 - [ ] Separately authorize temporary moderator access for the report and takedown test. Revoke elevated test roles after acceptance.
 
 ## Browser acceptance for direct publication and review
 
-Use a private Codespaces preview and the dedicated `lgn-development` project. This checklist requires both pending SQL changes in the order listed in the [publication policy](automated-moderation-policy.md). Confirm the preview points to development before submitting. Use two isolated browser sessions and synthetic content. Published fixtures are publicly readable through the development API.
+Use a private Codespaces preview and the dedicated `lgn-development` project. This checklist requires the pending SQL changes in the order listed in the [publication policy](automated-moderation-policy.md). Confirm the preview points to development before submitting. Use two isolated browser sessions and synthetic content. Published fixtures are publicly readable through the development API.
 
 | Session | Account |
 | --- | --- |
@@ -37,6 +37,8 @@ Use a private Codespaces preview and the dedicated `lgn-development` project. Th
 
 9. As A, revise a published fixture. Confirm a clean revision appears immediately at the same URL and History keeps both versions. Submit a synthetic credential marker in another revision, confirm the URL temporarily returns 404, then remove the marker and confirm the same URL returns.
 10. As A, report a published fixture using its article link. Verify A and B (reviewer role) cannot list private reports. With an explicitly authorized test moderator, open **Ghost Space → Review → Private reports** and verify the report points to the correct version. Record a reason and remove the reported version. Confirm a visitor gets 404 and that a moderator cannot remove a newer revision from an older report.
+
+11. As A, add a translation and a harmless UTF-8 attachment such as `<script>synthetic fixture</script>` saved in a text file. As a visitor, toggle the translation and verify original code stays unchanged. Download the attachment and confirm it arrives as `.txt`, with literal text. Publish another revision and verify the old materials and direct download URL are private.
 
 Do not grant reviewer access to a real account for testing. Provision and revoke a dedicated test account's role only with explicit maintainer authorization.
 

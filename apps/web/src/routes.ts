@@ -9,6 +9,7 @@ export default [
     route('projects', 'routes/projects.tsx'),
     route('table-talks', 'routes/table-talks.tsx'),
     route('work/:id', 'routes/work-detail.tsx'),
+    route('work/:workId/attachments/:attachmentId', 'routes/work-attachment.ts'),
     route('about', 'routes/about.tsx'),
     route('join', 'routes/join.tsx'),
     route('code', 'routes/code.tsx'),

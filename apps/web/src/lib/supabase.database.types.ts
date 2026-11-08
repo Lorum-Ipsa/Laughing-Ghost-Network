@@ -200,6 +200,81 @@ export type Database = {
           },
         ]
       }
+      ghost_contribution_text_attachments: {
+        Row: {
+          id: string
+          contribution_id: string
+          version: number
+          filename: string
+          content: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          contribution_id: string
+          version: number
+          filename: string
+          content: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          contribution_id?: string
+          version?: number
+          filename?: string
+          content?: string
+          created_at?: string
+        }
+        Relationships: [{
+          foreignKeyName: "ghost_contribution_text_attachments_contribution_id_fkey"
+          columns: ["contribution_id"]
+          isOneToOne: false
+          referencedRelation: "ghost_contributions"
+          referencedColumns: ["id"]
+        }]
+      }
+      ghost_contribution_translations: {
+        Row: {
+          id: string
+          contribution_id: string
+          version: number
+          language: string
+          title: string
+          summary: string
+          body: string
+          source: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          contribution_id: string
+          version: number
+          language: string
+          title: string
+          summary?: string
+          body?: string
+          source: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          contribution_id?: string
+          version?: number
+          language?: string
+          title?: string
+          summary?: string
+          body?: string
+          source?: string
+          created_at?: string
+        }
+        Relationships: [{
+          foreignKeyName: "ghost_contribution_translations_contribution_id_fkey"
+          columns: ["contribution_id"]
+          isOneToOne: false
+          referencedRelation: "ghost_contributions"
+          referencedColumns: ["id"]
+        }]
+      }
       ghost_contributions: {
         Row: {
           body: string

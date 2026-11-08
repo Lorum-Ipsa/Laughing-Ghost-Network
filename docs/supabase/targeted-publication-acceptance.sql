@@ -244,6 +244,51 @@ exception
   when sqlstate 'LGN01' then
     insert into qa_bot_out values ('report cannot remove a newer published revision',false);
 end $qa$;
+select set_config('request.jwt.claim.sub',(select id::text from qa_bot_users where k='a'),true);
+insert into public.ghost_contribution_translations(contribution_id,version,language,title,source)
+select id,version,'fr','Titre synthétique','human'
+from public.ghost_contributions where title='QA artifact' and kind='malware_samples';
+insert into public.ghost_contribution_text_attachments(contribution_id,version,filename,content)
+select id,version,'source.html','<script>synthetic fixture</script>'
+from public.ghost_contributions where title='QA artifact' and kind='malware_samples';
+set local role anon;
+insert into qa_bot_out select 'public can read a current translation and a literal text attachment',
+  (select count(*)=1 from public.ghost_contribution_translations where title='Titre synthétique')
+  and (select count(*)=1 from public.ghost_contribution_text_attachments
+    where filename='source.html' and content='<script>synthetic fixture</script>');
+set local role authenticated;
+select set_config('request.jwt.claim.sub',(select id::text from qa_bot_users where k='r'),true);
+do $qa$
+begin
+  insert into public.ghost_contribution_translations(contribution_id,version,language,title,source)
+  select id,version,'de','Synthetic foreign edit','human'
+  from public.ghost_contributions where title='QA artifact' and kind='malware_samples';
+  raise sqlstate 'LGN01';
+exception
+  when insufficient_privilege then
+    insert into qa_bot_out values ('another member cannot add translation to public work',true);
+  when sqlstate 'LGN01' then
+    insert into qa_bot_out values ('another member cannot add translation to public work',false);
+end $qa$;
+select set_config('request.jwt.claim.sub',(select id::text from qa_bot_users where k='a'),true);
+do $qa$
+begin
+  insert into public.ghost_contribution_text_attachments(contribution_id,version,filename,content)
+  select id,version,'secret.txt','-----BEGIN PRIVATE KEY----- synthetic marker'
+  from public.ghost_contributions where title='QA artifact' and kind='malware_samples';
+  raise sqlstate 'LGN01';
+exception
+  when check_violation then
+    insert into qa_bot_out values ('text attachments cannot bypass credential screening',true);
+  when sqlstate 'LGN01' then
+    insert into qa_bot_out values ('text attachments cannot bypass credential screening',false);
+end $qa$;
+update public.ghost_contributions set summary='New version without old materials',status='submitted'
+where title='QA artifact' and kind='malware_samples';
+set local role anon;
+insert into qa_bot_out select 'older translations and attachments become private after revision',
+  (select count(*)=0 from public.ghost_contribution_translations where title='Titre synthétique')
+  and (select count(*)=0 from public.ghost_contribution_text_attachments where filename='source.html');
 set local role anon;
 insert into qa_bot_out
 select 'takedown removes the reported article from public view',count(id)=0

@@ -1,5 +1,14 @@
 -- Pending development migration. Apply after review-version-guard.sql.
 -- Existing queued contributions and their findings are retained.
+-- Shared credential signal for articles and their supplementary text.
+create function lgn_private.has_contribution_credential_signal(p_text text)
+returns boolean language sql immutable security invoker set search_path='' as $fn$
+  select p_text ~ 'AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{36}|sk_live_[A-Za-z0-9]{8,}'
+    or p_text ~* '-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----';
+$fn$;
+revoke all on function lgn_private.has_contribution_credential_signal(text) from public,anon,authenticated;
+grant execute on function lgn_private.has_contribution_credential_signal(text) to authenticated;
+
 create function lgn_private.can_moderate_reports()
 returns boolean language sql stable security definer set search_path='' as $fn$
   select lgn_private.is_active_member() and exists (
@@ -93,8 +102,7 @@ begin
     -- into a published row. Credential-like material stays in the review queue.
     screening_text := concat_ws(E'\n',new.title,new.summary,new.body,new.code,new.tags,new.source_url,new.domain);
     if (tg_op='INSERT' or new.version<>old.version)
-      and screening_text !~ 'AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{36}|sk_live_[A-Za-z0-9]{8,}'
-      and screening_text !~* '-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----'
+      and not lgn_private.has_contribution_credential_signal(screening_text)
     then
       new.status:='published';
       if tg_op='UPDATE' and old.status='published' then

@@ -6,6 +6,7 @@ import { kindLabels, safeExternal, type WorkKind } from '@/lib/network';
 import { CONTENT_LANGUAGES } from '@/lib/languages';
 import type { GhostIdentity } from '@/lib/supabase-ghost-profile';
 import type { Database } from '@/lib/supabase.database.types';
+import { ContributionMaterials } from './contribution-materials';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 
 const FIELDS = 'id,profile_id,kind,title,language,domain,summary,body,tags,source_url,code,status,version,submitted_at,published_at,created_at,updated_at' as const;
@@ -89,6 +90,7 @@ export function SupabaseContributions({profile,userId}:Props) {
   const [preview,setPreview]=useState<GhostContribution|null>(null);
   const [revisionsFor,setRevisionsFor]=useState<GhostContribution|null>(null);
   const [revisions,setRevisions]=useState<Revision[]>([]);
+  const [materialsFor,setMaterialsFor]=useState<GhostContribution|null>(null);
   const [deleting,setDeleting]=useState<GhostContribution|null>(null);
   const [deleteError,setDeleteError]=useState('');
   const [busy,setBusy]=useState(false);
@@ -281,6 +283,8 @@ export function SupabaseContributions({profile,userId}:Props) {
           onClick={()=>begin(item)}>{item.status==='published'?'Revise':'Edit'}</button>
         <button type="button" className="gs-card-action" onClick={()=>{void showRevisions(item);}}><History size={14}/> History</button>
         {item.status==='published'&&<Link className="gs-card-action" to={`/work/${item.id}`}>View public article</Link>}
+        {item.status==='published'&&<button type="button" className="gs-card-action"
+          onClick={()=>setMaterialsFor(item)}>Translations and attachments</button>}
         {item.status==='submitted'&&<button className="gs-card-action" type="button" disabled={busy}
           onClick={()=>{void transition(item,'draft');}}><Undo2 size={14}/> Withdraw to draft</button>}
         {['draft','revision_requested','rejected'].includes(item.status)&&<button className="gs-card-action" type="button" disabled={busy}
@@ -331,6 +335,7 @@ export function SupabaseContributions({profile,userId}:Props) {
           <button className="gs-card-action" type="button" onClick={()=>setEditing(undefined)} disabled={busy}>Cancel</button>
         </div>
       </form></div>}
+    {materialsFor&&<ContributionMaterials item={materialsFor} onClose={()=>setMaterialsFor(null)}/>}
     {deleting&&<div className="gs-overlay" role="dialog" aria-modal="true" aria-labelledby="delete-contribution-title">
       <div className="gs-overlay-panel gs-preview">
         <h2 id="delete-contribution-title">Delete contribution?</h2>
