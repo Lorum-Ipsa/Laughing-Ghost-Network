@@ -41,7 +41,7 @@ export function SupabaseGhostSpaceDashboard() {
   useEffect(() => {
     if (!user?.id) { setCanReview(false); return; }
     let active=true;
-    void supabaseBrowser().rpc('can_review_contributions').then(({data,error}) => {
+    void Promise.resolve(supabaseBrowser().rpc('can_review_contributions')).then(({data,error}) => {
       if (active) setCanReview(!error && data===true);
     }).catch(()=>{if(active)setCanReview(false);});
     return()=>{active=false;};

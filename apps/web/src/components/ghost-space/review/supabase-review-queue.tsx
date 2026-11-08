@@ -145,7 +145,7 @@ export function SupabaseReviewQueue({profile}:Props){
         {selected.body&&<div className="gs-preview-body" style={{whiteSpace:'pre-wrap'}}>{selected.body}</div>}
         {selected.code&&<pre className="code-block" style={{whiteSpace:'pre-wrap'}}>{selected.code}</pre>}
         {selected.source_url&&safeExternal(selected.source_url)&&
-          <p><a href={safeExternal(selected.source_url)} target="_blank" rel="noopener noreferrer">Open cited source</a></p>}
+          <p><a href={safeExternal(selected.source_url) || undefined} target="_blank" rel="noopener noreferrer">Open cited source</a></p>}
         {selected.tags&&<p className="muted-note">Tags: {selected.tags}</p>}
         <div className="field">
           <label htmlFor="review-decision">Decision</label>
