@@ -82,9 +82,9 @@ jobs:
           done
           curl --fail --silent --show-error "$origin/lgn-push-sw.js" --output "$RUNNER_TEMP/lgn-push-sw.js"
           node --check "$RUNNER_TEMP/lgn-push-sw.js"
-          curl --fail --silent --show-error "$origin/research" | grep -F 'Examples of use' >/dev/null
-          curl --fail --silent --show-error "$origin/arsenal" | grep -F 'Examples of use' >/dev/null
-          curl --fail --silent --show-error "$origin/work/showcase-lsass-detection" --output /dev/null
+          curl --fail --silent --show-error "$origin/research" | grep -F 'href="/work/showcase-cloud-trust-paths"' >/dev/null
+          curl --fail --silent --show-error "$origin/arsenal" | grep -F 'href="/work/showcase-lsass-detection"' >/dev/null
+          curl --fail --silent --show-error "$origin/work/showcase-lsass-detection" | grep -F 'Educational demo artifact.' >/dev/null
           status=$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
             "$origin/work/00000000-0000-0000-0000-000000000000")
           test "$status" = 404
