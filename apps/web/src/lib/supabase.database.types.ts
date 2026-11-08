@@ -990,6 +990,78 @@ export type Database = {
           referencedColumns: ["id"]
         }]
       }
+      ghost_dm_threads: {
+        Row: {
+          id: string
+          first_profile_id: string
+          second_profile_id: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          first_profile_id: string
+          second_profile_id: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          first_profile_id?: string
+          second_profile_id?: string
+          updated_at?: string
+        }
+        Relationships: [{
+          foreignKeyName: "ghost_dm_threads_first_profile_id_fkey"
+          columns: ["first_profile_id"]
+          isOneToOne: false
+          referencedRelation: "ghost_profiles"
+          referencedColumns: ["id"]
+        }, {
+          foreignKeyName: "ghost_dm_threads_second_profile_id_fkey"
+          columns: ["second_profile_id"]
+          isOneToOne: false
+          referencedRelation: "ghost_profiles"
+          referencedColumns: ["id"]
+        }]
+      }
+      ghost_direct_messages: {
+        Row: {
+          id: string
+          thread_id: string
+          sender_profile_id: string
+          client_id: string
+          body: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          thread_id: string
+          sender_profile_id: string
+          client_id: string
+          body: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          thread_id?: string
+          sender_profile_id?: string
+          client_id?: string
+          body?: string
+          created_at?: string
+        }
+        Relationships: [{
+          foreignKeyName: "ghost_direct_messages_thread_id_fkey"
+          columns: ["thread_id"]
+          isOneToOne: false
+          referencedRelation: "ghost_dm_threads"
+          referencedColumns: ["id"]
+        }, {
+          foreignKeyName: "ghost_direct_messages_sender_profile_id_fkey"
+          columns: ["sender_profile_id"]
+          isOneToOne: false
+          referencedRelation: "ghost_profiles"
+          referencedColumns: ["id"]
+        }]
+      }
       ghost_profiles: {
         Row: {
           available_for_work: boolean
@@ -1091,6 +1163,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      send_ghost_direct_message: {
+        Args: { p_recipient_profile_id: string; p_client_id: string; p_body: string }
+        Returns: string
+      }
       ghost_push_public_key: { Args: never; Returns: string | null }
       update_assigned_project_task_status: {
         Args: { p_task_id: string; p_expected_status: string; p_status: string }

@@ -41,3 +41,5 @@ Notifications was installed on development as `20261108103356_phase1_notificatio
 Private follows were installed on development as `20261108104403_phase1_network_follows` from [the follow SQL](../network-follows.sql). The 10 follow checks and 25 existing Network and Notifications assertions passed against the installed schema.
 
 Live notifications and browser push were installed on development as `20261108105342_phase1_live_notifications_and_push_queue` and `20261108105422_phase1_notification_push_dispatch`. Sources: [Realtime and queue](../notification-push.sql), [dispatcher](../notification-push-dispatch.sql), and the repository Edge Function. The dispatcher migration adds the named `lgn-push-dispatch` schedule pointing at the development function. HTTP dispatch returned 200 and created the VAPID pair in Vault.
+
+Direct messages were installed on development as `20261108110619_phase1_direct_messages` from [the DM SQL](../direct-messages.sql). All 10 rollback-only DM checks and 25 Network and Notifications regression assertions passed against the installed schema.

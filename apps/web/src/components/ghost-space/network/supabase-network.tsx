@@ -208,6 +208,7 @@ export function SupabaseNetwork({profileId}:{profileId:string}) {
           const handle=handles[counterpart(row)];
           return <li key={row.id}>
             {handle?<Link to={ghostProfilePath(handle)}>@{handle}</Link>:'Ghost profile unavailable'}{' '}
+            <Link className="button button-outline" to={`/ghost-space?section=messages&with=${counterpart(row)}`}>Message</Link>{' '}
             <button type="button" disabled={busy} onClick={()=>disconnect(row)}>Disconnect</button>
           </li>;
         })}</ul>

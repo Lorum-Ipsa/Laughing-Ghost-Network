@@ -22,6 +22,7 @@ export type GhostSpaceSection =
 	| 'projects'
 	| 'table-talks'
 	| 'network'
+	| 'messages'
 	| 'notifications'
 	| 'settings';
 
@@ -33,6 +34,7 @@ const NAV: { section: GhostSpaceSection; label: string; icon: typeof LayoutDashb
 	{ section: 'projects', label: 'Projects', icon: FolderGit2 },
 	{ section: 'table-talks', label: 'Table Talks', icon: MessagesSquare },
 	{ section: 'network', label: 'Network', icon: NetworkIcon },
+	{ section: 'messages', label: 'Messages', icon: MessagesSquare },
 	{ section: 'notifications', label: 'Notifications', icon: Bell },
 	{ section: 'settings', label: 'Settings', icon: Settings },
 ];
@@ -40,10 +42,8 @@ const NAV: { section: GhostSpaceSection; label: string; icon: typeof LayoutDashb
 /**
  * The Ghost Space application shell. A persistent member navigation replaces
  * the public site nav inside the logged-in layer: Dashboard, My Profile,
- * Contributions, Projects, Table Talks, Network, Notifications, Settings, plus
- * an obvious "View Public Profile" exit. Only Dashboard is functional in this
- * first pass; the remaining sections render a placeholder while they are built
- * one at a time.
+ * Contributions, Projects, Table Talks, Network, Messages, Notifications,
+ * Settings, and an exit to the public profile.
  */
 export function GhostSpaceLayout({
 	section,

@@ -7,6 +7,7 @@ import { supabaseBrowser } from '@/lib/supabase-browser';
 import { SupabaseProfileEditor } from '@/components/ghost-space/profile/supabase-profile-editor';
 import { SupabaseContributions } from '@/components/ghost-space/contributions/supabase-contributions';
 import { SupabaseNotifications } from '@/components/ghost-space/notifications/supabase-notifications';
+import { SupabaseMessages } from '@/components/ghost-space/messages/supabase-messages';
 import { SupabaseNetwork } from '@/components/ghost-space/network/supabase-network';
 import { SupabaseTableTalks } from '@/components/ghost-space/table-talks/supabase-table-talks';
 import { SupabaseProjects } from '@/components/ghost-space/projects/supabase-projects';
@@ -20,7 +21,7 @@ import { GhostSpaceLayout, type GhostSpaceSection } from '@/components/ghost-spa
 
 const sections: GhostSpaceSection[] = [
   'dashboard', 'profile', 'contributions', 'review', 'projects', 'table-talks',
-  'network', 'notifications', 'settings',
+  'network', 'messages', 'notifications', 'settings',
 ];
 
 export function SupabaseGhostSpaceDashboard() {
@@ -159,6 +160,8 @@ export function SupabaseGhostSpaceDashboard() {
         <SupabaseTableTalks profileId={profile.id} />
       ) : section === 'network' ? (
         <SupabaseNetwork profileId={profile.id} />
+      ) : section === 'messages' ? (
+        <SupabaseMessages key={profile.id} profileId={profile.id} />
       ) : section === 'notifications' ? (
         <SupabaseNotifications profileId={profile.id} />
       ) : section === 'review' ? (

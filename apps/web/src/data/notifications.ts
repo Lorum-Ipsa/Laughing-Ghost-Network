@@ -36,6 +36,7 @@ export type NotificationType =
 	| 'table_talk_decision'
 	| 'collaboration_request_received'
 	| 'collaboration_request_updated'
+	| 'direct_message_received'
 	| 'mention'
 	| 'moderation_notice'
 	| 'report_received'
@@ -74,6 +75,7 @@ export const TYPE_CATEGORY: Record<NotificationType, NotificationCategory> = {
 	table_talk_decision: 'table_talks',
 	collaboration_request_received: 'collaboration',
 	collaboration_request_updated: 'collaboration',
+	direct_message_received: 'collaboration',
 	mention: 'mentions',
 	moderation_notice: 'moderation',
 	report_received: 'moderation',
@@ -101,6 +103,7 @@ export const TYPE_LABELS: Record<NotificationType, string> = {
 	table_talk_decision: 'Table Talk Decision',
 	collaboration_request_received: 'Collaboration Request',
 	collaboration_request_updated: 'Collaboration Update',
+	direct_message_received: 'Direct Message',
 	mention: 'Mention',
 	moderation_notice: 'Moderation Notice',
 	report_received: 'Report Filed',
