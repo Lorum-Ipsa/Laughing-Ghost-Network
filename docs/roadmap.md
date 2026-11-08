@@ -10,7 +10,7 @@
 **Implemented on feature branch; live user acceptance pending.** Expanded profile sections, specialties/skills/tools, languages, location, availability, avatar templates, external links, public profile route and directory lookup. Remaining: custom upload security, field-specific private visibility, verified external account ownership, production serving.
 
 ## 3. Contribution publishing lifecycle
-**Author workspace implemented; moderator workflow pending.** Draft/edit/submit/withdraw/archive/restore, immutable version history, RLS protections and 14 SQL regression assertions. Next: staff review feedback and moderated publish/reject/revise actions, public work rendering, attachment security, version release workflow.
+**Author workspace implemented; moderator workflow pending.** Draft/edit/submit/withdraw/archive/restore, immutable version history, RLS protections and 14 SQL regression assertions. Submission has no arbitrary character minimum: title plus a description, summary, code, or URL suffices. Next: staff review feedback and moderated publish/reject/revise actions, public work rendering, attachment security, version release workflow.
 
 ## 4. Network functionality
 Migrate projects/tasks, Table Talks, moderation queues, community collaboration and notifications from historical PocketBase schemas. Preserve accessible, evidence-centered interfaces and published-original-language fidelity. Each requires its own reviewed authorization and audit model.

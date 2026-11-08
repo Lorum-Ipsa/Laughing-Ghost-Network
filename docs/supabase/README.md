@@ -28,7 +28,7 @@
 
 There is no civil identity requirement. Account email, Auth ID, role/suspension record, and internal account-to-profile association are excluded from public browser queries.
 
-Contribution status is constrained server-side. Members can submit suitable drafts but **cannot publish them**; published work will require staff workflows. Updates create numbered immutable snapshots. Blank or incomplete drafts can be saved privately but not submitted for review. Suspended or unverified users cannot create/edit work.
+Contribution status is constrained server-side. Members can submit suitable drafts but **cannot publish them**; published work will require staff workflows. Updates create numbered immutable snapshots. Blank or incomplete drafts can be saved privately. Submission requires a nonblank title and at least one of summary, body, code, or source URL; no arbitrary prose length minimum applies. Suspended or unverified users cannot create/edit work.
 
 ## Applied database migrations
 
@@ -39,13 +39,14 @@ The initial foundation schema was applied manually and recorded as [a historical
 - `20261107225329_expand_ghost_profile_and_contribution_drafts`
 - `20261107225449_fix_contribution_profile_link_rls`
 - `20261107230314_index_contributions_by_profile`
+- `20261108073825_allow_concise_contribution_submissions`
 
 **Next release-engineering task:** establish a clean Supabase CLI remote-to-local baseline, compare migration history, and test a disposable rebuild before staging. Do not guess or duplicate migration versions.
 
 ## Security evidence
 
 - [23 identity/RLS regression assertions](identity-rls-acceptance.sql), [summary](security-acceptance.md).
-- [14 contribution/RLS regression assertions](contributions-rls-acceptance.sql).
+- [14 contribution/RLS regression assertions](contributions-rls-acceptance.sql), plus 8 short-submission acceptance tests on the revised trigger.
 - [Human acceptance guide](profile-contributions-acceptance.md).
 
 The 14 contributions tests exercise real PostgreSQL RLS under synthetic authenticated/anonymous actors, submission requirements, revision snapshots, forbidden self-publication, cross-user isolation, and suspension. All database test writes are inside `BEGIN`/`ROLLBACK`.

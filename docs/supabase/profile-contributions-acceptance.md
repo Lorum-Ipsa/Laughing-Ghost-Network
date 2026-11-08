@@ -20,7 +20,7 @@ Leave the process running and open [localhost:3000](http://localhost:3000). GitH
 1. Sign in through normal **Sign In**, then enter **Ghost Space**.
 2. Select **My Profile**. Confirm the original handle remains locked and the new sections exist: Identity, Ghost avatar templates, Practice, Languages, Location, Availability and External identities.
 3. Change your display name, bio, a specialty, a working language, a Ghost avatar preset, and **one additional public field that you are comfortable disclosing**. Do not enter personal/private data into public fields.
-4. Select **Preview public details**. Review the local preview, then **Save changes**.
+4. Select **Preview public details** from either the header or the bottom of the profile editor. A visible dialog must open immediately with your unsaved public fields, including avatar, bio, specialties, and links. Confirm **Close** and **Escape** both dismiss it without saving. Then select **Save changes**.
 5. Refresh Ghost Space; verify the data remains.
 6. Choose **View Public Profile** from the sidebar (or open `/ghosts/YOUR_HANDLE`). Check the new data appears correctly and the email/private account ID does not.
 7. Open **Search the Network** and find your handle. Make sure your profile is not confused with a PocketBase demonstration Ghost.
@@ -32,8 +32,8 @@ Leave the process running and open [localhost:3000](http://localhost:3000). GitH
 1. In Ghost Space select **Contributions → Create Contribution**.
 2. Choose a type such as Research or Writeup. Fill in only a **title** and click **Save draft**.
 3. Confirm the draft appears under **Drafts**; refresh the page and ensure it persists.
-4. Open **History**; the initial revision should be present. Try **Submit for review** on an incomplete draft: the app/database should reject it.
-5. Edit the draft, providing a title of at least 10 characters, a summary of at least 40, and a reproducible, non-sensitive methodology/body of at least 100. Save the draft, then **Submit for review**.
+4. Open **History**; the initial revision should be present. Try **Submit for review** on an entirely empty draft: the app/database should reject it. A title plus any one of summary, description, code, or HTTPS reference is enough; there are no minimum character counts.
+5. Edit the draft with a short title (for example, **Note**) and a one-line summary, then **Submit for review**. It should succeed. Repeat with another draft consisting of only a title and code or HTTPS source reference. Longer methodology is appropriate when helpful, never a fixed-length requirement.
 6. Confirm it moves to **In Review**, with a newer version and updated history.
 7. Verify you cannot mark it **Published** yourself. There is deliberately no author-facing Publish button.
 8. Choose **Withdraw to draft**; edit, then test archive and restore. Revisions must continue to be recorded and remain read-only.

@@ -12,5 +12,6 @@ The remaining applied versions are recorded here:
 | `20261107225329` | Public profile field expansion and RLS-protected contribution/revision tables |
 | `20261107225449` | Correct contribution insert policy to use the owner-scoped profile link without exposing `owner_id` |
 | `20261107230314` | Add profile contribution lookup index |
+| `20261108073825` | Allow concise contributions: title plus any actual content without arbitrary minimum length |
 
 **Do not replay** these directly on `lgn-development`. Resolve a reviewed Supabase CLI baseline before using them in a fresh staging environment. Future migrations should be generated and tested with the version of the CLI actually installed, with authorization and rollback tests.
