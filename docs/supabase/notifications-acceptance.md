@@ -11,8 +11,18 @@ The Supabase inbox covers contribution review outcomes, project invitations and 
 - [ ] Confirm a third account cannot see the inbox or preferences, and signed-out visitors cannot access them.
 - [ ] Reconcile any approved historical PocketBase notifications before retiring their source. Obtain final approval before merge or production deployment.
 
-This slice is in-app only. Email, push delivery, live updates and security-alert policy are separate work. Notifications refresh when opening the inbox or selecting Refresh.
+The open inbox refreshes on Supabase Realtime changes and reconnects. Browser push is opt-in per browser. Email and security-alert policy remain separate.
 
 ## Followed publications
 
 - [ ] Enable **New work from Ghosts I follow**, then have a followed Ghost publish a synthetic contribution. Confirm one notice links to the article. Verify drafts, later edits, and new work after unfollowing do not generate notices. This preference is off by default and is independent of review notices.
+
+## Live updates and browser push
+
+Development uses [the queue and Realtime SQL](notification-push.sql), the `lgn-push` Edge Function, and [the dispatch SQL](notification-push-dispatch.sql). The development worker responds successfully and its VAPID key pair is stored in Vault. The private Cron job polls every minute. Production requires its own function deployment, migration, and schedule after approval.
+
+- [ ] Open the inbox as B. Generate a synthetic notice from A and confirm the list and unread count refresh without clicking Refresh. A third account should see no event.
+- [ ] On a browser and device you control, enable **Browser push** in Ghost Space. Grant permission, close the tab, and trigger a notice. Confirm the browser shows only a generic LGN alert. Clicking it should open Notifications.
+- [ ] Decline browser permission and verify in-app notices still work. Enable on another browser, disable the first browser, and verify the second remains enrolled. Disable push before changing accounts on a shared browser.
+- [ ] Confirm repeated dispatch attempts are bounded and expired browser subscriptions are removed. The rollout smoke test verifies worker reachability and key initialization. Actual device delivery requires browser consent.
+- [ ] Before production rollout, set the target function URL in the Cron command for the selected project. Keep Vault values out of GitHub and logs.

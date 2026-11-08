@@ -978,6 +978,18 @@ export type Database = {
           referencedColumns: ["id"]
         }]
       }
+      ghost_push_subscriptions: {
+        Row: { id: string; profile_id: string; endpoint: string; p256dh: string; auth: string; created_at: string }
+        Insert: { id?: string; profile_id: string; endpoint: string; p256dh: string; auth: string; created_at?: string }
+        Update: { id?: string; profile_id?: string; endpoint?: string; p256dh?: string; auth?: string; created_at?: string }
+        Relationships: [{
+          foreignKeyName: "ghost_push_subscriptions_profile_id_fkey"
+          columns: ["profile_id"]
+          isOneToOne: false
+          referencedRelation: "ghost_profiles"
+          referencedColumns: ["id"]
+        }]
+      }
       ghost_profiles: {
         Row: {
           available_for_work: boolean
@@ -1079,6 +1091,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      ghost_push_public_key: { Args: never; Returns: string | null }
       update_assigned_project_task_status: {
         Args: { p_task_id: string; p_expected_status: string; p_status: string }
         Returns: boolean

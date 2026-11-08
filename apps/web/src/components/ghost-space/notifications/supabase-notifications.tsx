@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { PushPreferences } from './push-preferences';
 import { NotificationItem } from './notification-item';
 import { CATEGORY_LABELS, TYPE_CATEGORY } from '@/data/notifications';
 import type { NotificationCategory, NotificationType } from '@/data/notifications';
@@ -58,6 +59,23 @@ export function SupabaseNotifications({profileId}:{profileId:string}) {
     return()=>{active=false;};
   },[profileId,tab,page,revision]);
 
+  useEffect(()=>{
+    const api=supabaseBrowser();
+    let refreshTimer:number|undefined;
+    function refresh(){
+      window.clearTimeout(refreshTimer);
+      refreshTimer=window.setTimeout(()=>setRevision(value=>value+1),150);
+    }
+    const channel=api.channel(`ghost-inbox-${profileId}`)
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'ghost_notifications',filter:`profile_id=eq.${profileId}`},refresh)
+      .on('postgres_changes',{event:'UPDATE',schema:'public',table:'ghost_notifications',filter:`profile_id=eq.${profileId}`},refresh)
+      .subscribe(status=>{if(status==='SUBSCRIBED')refresh();});
+    return()=>{
+      window.clearTimeout(refreshTimer);
+      void api.removeChannel(channel);
+    };
+  },[profileId]);
+
   async function change(action:()=>PromiseLike<{error:unknown}>,message:string){
     if(busy)return;
     setBusy(true);setError('');setNotice('');
@@ -109,6 +127,7 @@ export function SupabaseNotifications({profileId}:{profileId:string}) {
       {page>0&&<button type="button" onClick={()=>setPage(value=>value-1)}>Newer</button>}
       {items.length>pageSize&&<button type="button" onClick={()=>setPage(value=>value+1)}>Older</button>}
     </>}
+    <PushPreferences profileId={profileId}/>
     <fieldset className="dashboard-panel" disabled={loading||busy}>
       <legend>In-app preferences</legend>
       <p>Changes apply to future notices in each category.</p>
