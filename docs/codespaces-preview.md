@@ -1,6 +1,6 @@
 # Preview LGN from GitHub Codespaces
 
-This is a **private development preview**, not a production deployment. It runs on GitHub's remote computer, and port **3000** is forwarded to your browser. The original PocketBase environment remains available locally as rollback/reference; normal member Join and Login are now connected to the Supabase development project.
+This is a **private development preview**, not a production deployment. It runs on GitHub's remote computer, and port **3000** is forwarded to your browser. The preview uses the Supabase development project for authentication and member data.
 
 ## Open the latest application
 
@@ -15,7 +15,7 @@ This is a **private development preview**, not a production deployment. It runs 
    bash .devcontainer/start.sh
    ```
 
-   **Leave that terminal running.** It should show PocketBase healthy, then the React Router/Vite development server. The setup script only installs dependencies and prepares the test database; the start script is what actually serves the website.
+   **Leave that terminal running.** It should show the React Router/Vite development server. The setup script installs dependencies and runs the source checks.
 
 3. In the bottom pane of **VS Code**, click **PORTS** (beside TERMINAL). The forwarded **3000 / LGN web preview** entry must be present and **Private**. If missing, select **Forward a Port**, enter **3000**, and leave visibility **Private**.
 4. On the port-3000 row select the globe/open-in-browser button or the forwarded address. **Do not type `localhost:3000` on your local computer's browser** when working in browser-based Codespaces. The address is typically `https://CODESPACE_NAME-3000.app.github.dev/`.
@@ -36,7 +36,6 @@ ss -ltnp | grep -E ':(3000|8090)\b' || true
 - **200 for Web and Health:** the server is working inside Codespaces. Use the **PORTS** panel and your private **Open in Browser** link. If a forwarded URL still fails, check GitHub Codespaces permissions/sign-in, browser pop-up blocking, and whether the Codespace is still running.
 - **Connection refused / `000` / no listener on 3000:** `start.sh` isn't running or failed. Inspect the **first terminal**, run setup again if needed, and restart.
 - **Port 3000 already in use:** another dev server may be running. Stop it with **Ctrl+C** in its terminal; do not run competing servers. The new Vite config uses `strictPort` to show this instead of silently moving to port 3001.
-- **PocketBase fails:** inspect `tail -n 80 .local/pocketbase.log` and the first terminal.
 - **A Host not allowed error:** the latest Vite config explicitly allows your Codespace's private forwarded hostname. Ensure you're on the latest feature-branch commit and restart `start.sh`.
 - **Server responds, page blank after rendering:** use browser Developer Tools → Console and send the first error text (redact email addresses and credentials).
 
@@ -44,4 +43,4 @@ ss -ltnp | grep -E ':(3000|8090)\b' || true
 
 Once the preview opens, the visitor registration flow is **Join → Verify Email → Sign In → Ghost Space** with Supabase. Add your specific forwarded **/verify-email** and **/reset-password** HTTPS URLs to [Supabase Auth URL Configuration](https://supabase.com/dashboard/project/oatdfrnytmliunauxqyd/auth/url-configuration); changing your Codespace's hostname means updating these URLs. See the [normal registration test](supabase/normal-registration-test.md).
 
-No real PocketBase account or existing Horizons login is imported into Supabase. Keep the Codespace port private and do not share mailbox passwords or secret API keys.
+Use dedicated development accounts to test Supabase registration and sign-in. Keep the Codespace port private and do not share mailbox passwords or secret API keys.

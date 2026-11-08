@@ -1,5 +1,4 @@
 import { useId } from 'react';
-import { useAuth } from '@/hooks/use-auth';
 import {
 	ACCENT_COLORS,
 	normalizeVisibility,
@@ -9,24 +8,8 @@ import {
 	type GhostBackground,
 	type GhostExpression,
 } from '@/lib/ghost-avatar';
-import { profileAvatarUrl, type GhostProfile } from '@/lib/network';
+import type { GhostProfile } from '@/lib/network';
 
-/**
- * The Laughing Ghost avatar. Renders, in priority order:
- *   1. A custom uploaded image (when `profile.avatar` is set and visible)
- *   2. A chosen template ghost (SVG), or the handle-derived default
- *
- * Visibility (`avatar_visibility`: public | members | hidden) is honored here
- * so every surface that shows a Ghost — directory, public profile, projects,
- * Table Talks, collaboration views — respects the owner's choice without each
- * call site re-implementing it. `forceShow` bypasses visibility for the owner's
- * own preview in My Profile.
- *
- * Template avatars are pure SVG: composable expression + accent + background
- * variants that all share the Laughing Ghost silhouette. No file storage, no
- * network request, no face required — logos, symbols, art, and handles fit
- * the pseudonymous identity model.
- */
 
 const BODY_FILL = 'hsl(var(--foreground))';
 const BODY_DIM = 'hsl(var(--foreground) / 0.82)';
@@ -194,11 +177,8 @@ export type GhostAvatarProps = {
 	handle?: string;
 	size?: number;
 	className?: string;
-	thumb?: string;
 	/** Bypass visibility (the owner previewing their own profile). */
 	forceShow?: boolean;
-	/** Render only the template/default, ignoring a custom upload. */
-	templateOnly?: boolean;
 };
 
 export function GhostAvatar({
@@ -206,40 +186,15 @@ export function GhostAvatar({
 	handle,
 	size = 48,
 	className = '',
-	thumb = '400x400',
 	forceShow = false,
-	templateOnly = false,
 }: GhostAvatarProps) {
-	const { isAuthed, isLoading } = useAuth();
 	const visibility = normalizeVisibility(profile?.avatar_visibility);
-	const customUrl = !templateOnly && profile?.avatar ? profileAvatarUrl(profile, thumb) : '';
-
-	// Visibility gate. Public avatars render immediately (SSR-safe). Members-
-	// only avatars render for authenticated viewers; during the initial
-	// isLoading window we render the placeholder so SSR and first client render
-	// match (no hydration mismatch). Hidden avatars always render the
-	// handle-derived placeholder.
-	const visible = forceShow || visibility === 'public' || (visibility === 'members' && isAuthed && !isLoading);
 
 	const effectiveHandle = profile?.handle || handle || 'ghost';
 	const template = resolveTemplate({ handle: effectiveHandle, avatar_template: profile?.avatar_template });
 
-	if (customUrl && visible) {
-		return (
-			<img
-				src={customUrl}
-				alt={`${effectiveHandle} avatar`}
-				width={size}
-				height={size}
-				className={`ghost-avatar-img ${className}`}
-				loading="lazy"
-				decoding="async"
-				style={{ width: size, height: size }}
-			/>
-		);
-	}
 
-	if (!visible) {
+	if (!forceShow && visibility !== 'public') {
 		// Hidden from this viewer — show the neutral handle-derived silhouette
 		// without the chosen expression/accent, so the placeholder never leaks
 		// the owner's selected variant.

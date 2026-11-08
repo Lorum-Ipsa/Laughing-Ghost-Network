@@ -6,9 +6,7 @@
  * language is always preserved and authoritative; translation is a reader's
  * choice that never replaces the original.
  *
- * The list is intentionally broad: LGN is an international network. Add codes
- * here and to the matching PocketBase `select` values when a new language is
- * needed — both the UI labels and the migration values must stay in sync.
+ * The list is intentionally broad: LGN is an international network.
  */
 export type ContentLanguage = { code: string; label: string; native: string };
 
@@ -40,7 +38,7 @@ export const CONTENT_LANGUAGES: ContentLanguage[] = [
 
 export const DEFAULT_CONTENT_LANGUAGE = 'en';
 
-/** Codes allowed on the PocketBase `language` select fields — keep in sync. */
+/** Codes available for publication. */
 export const CONTENT_LANGUAGE_CODES = CONTENT_LANGUAGES.map((l) => l.code);
 
 /** Native name for a language code, e.g. `contentLanguageLabel('fr') → 'Français'`. */

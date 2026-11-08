@@ -1,7 +1,6 @@
 import type { Route } from './+types/projects';
-import { publicSupabaseProjects } from '@/lib/supabase-public.server';
+import { publicSupabaseProjects, publicWork } from '@/lib/supabase-public.server';
 import { seo } from '@/lib/seo';
-import { getPublicWork, getProjectContributorCounts } from '@/lib/network.server';
 import { PROJECT_KINDS } from '@/data/projects';
 import { PageHeading } from '@/components/page-heading';
 import { ProjectsLibrary } from '@/components/projects/projects-library';
@@ -15,14 +14,9 @@ export function meta({ matches, location }: Route.MetaArgs) {
 }
 
 export async function loader() {
-  const [projects, legacy] = await Promise.all([
-    publicSupabaseProjects(),
-    Promise.all([getPublicWork(),getProjectContributorCounts()]).catch(()=>null),
-  ]);
-  const [allWork,contributorCounts]=legacy??[[],{}];
+  const [projects, allWork] = await Promise.all([publicSupabaseProjects(), publicWork()]);
   const kinds = new Set(PROJECT_KINDS as readonly string[]);
-  const work = allWork.filter((item) => kinds.has(item.kind));
-  return { projects, work, contributorCounts, legacyUnavailable:legacy===null };
+  return { projects, work: allWork.filter(item => kinds.has(item.kind)) };
 }
 
 export default function Projects({ loaderData }: Route.ComponentProps) {
@@ -36,7 +30,7 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
       />
       <section className="rail">
         <h2>Community projects</h2>
-        {loaderData.projects.length===0&&<p>No public projects in the new workspace yet.</p>}
+        {loaderData.projects.length===0&&<p>No member projects have been published yet.</p>}
         <ul className="gs-card-list">{loaderData.projects.map(project=><li className="dashboard-panel" key={project.id}>
           <h3>{project.title}</h3>
           <p>{project.summary}</p>
@@ -44,8 +38,7 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
           {project.roles.length>0&&<p>Open roles · {project.roles.map(role=>role.title).join(', ')}</p>}
         </li>)}</ul>
       </section>
-      {loaderData.legacyUnavailable&&<p className="rail" role="status">The historical Projects library is temporarily unavailable.</p>}
-      <ProjectsLibrary work={loaderData.work} contributorCounts={loaderData.contributorCounts} />
+      <ProjectsLibrary work={loaderData.work} contributorCounts={{}} />
     </main>
   );
 }

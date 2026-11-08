@@ -1,3 +1,4 @@
+import { ghostProfilePath } from '@/lib/ghost-handle';
 import { Link } from 'react-router';
 import { ArrowUpRight, Clock, Users, Globe, Gauge, Tag, Layers } from 'lucide-react';
 import { kindLabels, tagsOf, type Work } from '@/lib/network';
@@ -20,7 +21,7 @@ import { GhostAvatar } from '@/components/ghost-avatar';
  */
 export function ExerciseCard({ work, index }: { work: Work; index: number }) {
   const handle = work.expand?.author?.handle;
-  const profileUrl = handle ? `/ghosts/${handle}` : '/ghosts';
+  const profileUrl = handle ? ghostProfilePath(handle, work.expand?.author?.example) : '/ghosts';
   const roles = tagsOf(work.roles_needed);
   const langLabel = contentLanguageLabel(work.language);
   const typeLabel = exerciseTypeLabel(work.exercise_type);

@@ -143,19 +143,6 @@ export const KIND_ORDER: WorkKind[] = ['research', 'intelligence', 'investigatio
 
 export function tagsOf(value?: string | null) { return (value || '').split(',').map(tag => tag.trim()).filter(Boolean); }
 
-/**
- * Public avatar URL for a Ghost profile. Avatars are stored as files on the
- * `ghost_profiles` collection, served through the reverse-proxied PocketBase
- * at `/hcgi/platform`. Returns an empty string when no avatar is set so callers
- * can fall back to the Ghost mark. An optional thumb (e.g. `400x400`) selects a
- * PocketBase-generated thumbnail.
- */
-export function profileAvatarUrl(profile: { id: string; avatar?: string | null }, thumb?: string): string {
-  if (!profile?.avatar) return '';
-  const base = '/hcgi/platform/api/files/ghost_profiles';
-  const url = `${base}/${profile.id}/${profile.avatar}`;
-  return thumb ? `${url}?thumb=${thumb}` : url;
-}
 export function safeExternal(value?: string | null) { try { const url = new URL(value || ''); return ['https:', 'http:'].includes(url.protocol) ? value : undefined; } catch { return undefined; } }
 export function paragraphs(value: string) { return value.split('\n\n').filter(Boolean); }
 

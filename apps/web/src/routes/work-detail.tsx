@@ -3,8 +3,7 @@ import { Link } from 'react-router';
 import type { Route } from './+types/work-detail';
 import { showcaseWork } from '@/data/library-showcases';
 import { seo } from '@/lib/seo';
-import { getWork, getTranslations, getRelatedWork, getRelatedByDomain, getContributorCount } from '@/lib/network.server';
-import { publicSupabaseContribution, publicSupabaseMaterials } from '@/lib/supabase-public.server';
+import { publicSupabaseContribution, publicSupabaseMaterials, publicWorkByProfile } from '@/lib/supabase-public.server';
 import { Article } from '@/components/work/article';
 import { WorkHeading } from '@/components/work/work-heading';
 import { TranslateBar } from '@/components/work/translate-bar';
@@ -14,25 +13,15 @@ const isSupabaseId = (id:string) => /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12
 
 export async function loader({ params }: Route.LoaderArgs) {
   const example=showcaseWork.find(item=>item.id===params.id);
-  if(example)return {work:example,translations:[],attachments:[],related:[],networkRelated:[],contributorCount:0};
-  // Supabase IDs must never fall through to PocketBase, including after deletion.
-  if (isSupabaseId(params.id)) {
-    const work=await publicSupabaseContribution(params.id);
-    if(!work)throw new Response('Contribution not found', {status:404});
-    const {translations,attachments}=await publicSupabaseMaterials(work.id,Number(work.version));
-    return {work,translations,attachments,related:[],networkRelated:[],contributorCount:0};
-  }
-  const work = await getWork(params.id);
-  const isProject = work.kind === 'project';
-  const isExercise = work.kind === 'exercise';
-  const fetchRelated = isProject || isExercise;
-  const [translations, related, networkRelated, contributorCount] = await Promise.all([
-    getTranslations(params.id),
-    getRelatedWork(work.author, work.id),
-    fetchRelated ? getRelatedByDomain(work) : Promise.resolve([]),
-    (isProject || isExercise) ? getContributorCount(params.id) : Promise.resolve(0),
+  if (example) return { work: example, translations: [], attachments: [], related: showcaseWork.filter(item => item.author === example.author && item.id !== example.id), networkRelated: [], contributorCount: 0 };
+  if (!isSupabaseId(params.id)) throw new Response('Contribution not found', { status: 404 });
+  const work = await publicSupabaseContribution(params.id);
+  if (!work) throw new Response('Contribution not found', { status: 404 });
+  const [{ translations, attachments }, related] = await Promise.all([
+    publicSupabaseMaterials(work.id, Number(work.version)),
+    work.expand?.author ? publicWorkByProfile(work.expand.author) : Promise.resolve([]),
   ]);
-  return { work, translations, attachments:[], related, networkRelated, contributorCount };
+  return { work, translations, attachments, related: related.filter(item => item.id !== work.id), networkRelated: [], contributorCount: 0 };
 }
 export function meta({ matches, location, loaderData }: Route.MetaArgs) {
   return seo({ matches, location }, {

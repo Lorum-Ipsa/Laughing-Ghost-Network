@@ -58,11 +58,10 @@ jobs:
         run: bun run build
       - name: Typecheck
         run: bun run typecheck
-      - name: Smoke test migrated routes without PocketBase
+      - name: Smoke test public routes and demo content
         env:
           HOST: 127.0.0.1
           PORT: '3100'
-          POCKETBASE_URL: http://127.0.0.1:1
         run: |
           npm run start --workspace web > "$RUNNER_TEMP/lgn-web-smoke.log" 2>&1 &
           app_pid=$!
@@ -77,7 +76,7 @@ jobs:
             cat "$RUNNER_TEMP/lgn-web-smoke.log"
             exit 1
           fi
-          for route in research arsenal code login projects table-talks; do
+          for route in '' ghosts ghosts/~demo-nullspectre research arsenal code login projects table-talks sitemap.xml llms.txt; do
             curl --fail --silent --show-error "$origin/$route" --output /dev/null
           done
           for route in research arsenal projects table-talks; do
@@ -92,46 +91,12 @@ jobs:
           curl --fail --silent --show-error "$origin/research" | grep -F 'href="/work/showcase-cloud-trust-paths"' >/dev/null
           curl --fail --silent --show-error "$origin/arsenal" | grep -F 'href="/work/showcase-lsass-detection"' >/dev/null
           curl --fail --silent --show-error "$origin/work/showcase-lsass-detection" | grep -F 'Educational demo artifact.' >/dev/null
+          curl --fail --silent --show-error "$origin/projects" | grep -F 'href="/work/demo-detection-lab"' >/dev/null
+          curl --fail --silent --show-error "$origin/table-talks" | grep -F 'href="/work/demo-cloud-incident"' >/dev/null
+          curl --fail --silent --show-error "$origin/ghosts/~demo-nullspectre" | grep -F 'Fictional demo profile' >/dev/null
           status=$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
             "$origin/work/00000000-0000-0000-0000-000000000000")
           test "$status" = 404
-
-  pocketbase-migrations:
-    name: Fresh PocketBase database migrations
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    defaults:
-      run:
-        working-directory: apps/pocketbase
-    env:
-      PB_ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef
-      LGN_APP_URL: http://127.0.0.1:3000
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install export-matched PocketBase 0.40.4
-        run: |
-          curl --fail --location --show-error --silent --retry 3 \
-            https://github.com/pocketbase/pocketbase/releases/download/v0.40.4/pocketbase_0.40.4_linux_amd64.zip \
-            --output pocketbase-ci.zip
-          unzip -oq pocketbase-ci.zip pocketbase
-          chmod +x ./pocketbase
-          ./pocketbase --version
-      - name: Apply all migrations to a clean, disposable database
-        run: |
-          ./pocketbase migrate up \
-            --dir=./pb_data \
-            --migrationsDir=./pb_migrations \
-            --hooksDir=./pb_hooks \
-            --encryptionEnv=PB_ENCRYPTION_KEY
-      - name: Verify no superuser was silently created
-        run: |
-          python3 - <<'PY'
-          import sqlite3
-          con = sqlite3.connect('pb_data/data.db')
-          count = con.execute('SELECT COUNT(*) FROM "_superusers"').fetchone()[0]
-          assert count == 0, f'Unexpected migrated superuser count: {count}'
-          print('Zero auto-provisioned superusers.')
-          PY
 
   codespaces-preview-smoke:
     name: Public-page preview smoke test
@@ -176,8 +141,7 @@ jobs:
             -H 'Host: lgn-ci-preview-3000.app.github.dev' \
             http://127.0.0.1:3000/ --output "$RUNNER_TEMP/codespaces-home.html"
           grep -qi 'Laughing Ghost' "$RUNNER_TEMP/codespaces-home.html"
-          # The actual searchable directory must render both legacy and new
-          # public Ghost profiles through their respective safe read paths.
+          # Confirm the searchable directory renders in the Supabase preview.
           curl --fail --silent --show-error http://127.0.0.1:3000/ghosts \
             --output "$RUNNER_TEMP/ghost-directory.html"
           grep -qi 'Search the Network' "$RUNNER_TEMP/ghost-directory.html"
@@ -190,7 +154,7 @@ jobs:
             test -s "$RUNNER_TEMP/auth-$page.html"
           done
           # Client-only auth must never ship an account secret in server HTML.
-          if grep -Eqi 'sb_secret_|service_role|PB_SUPERUSER_PASSWORD=' "$RUNNER_TEMP"/auth-*.html; then
+          if grep -Eqi 'sb_secret_|service_role' "$RUNNER_TEMP"/auth-*.html; then
             echo "Unexpected secret marker in auth page HTML"
             exit 1
           fi

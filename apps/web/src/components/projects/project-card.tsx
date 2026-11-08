@@ -1,3 +1,4 @@
+import { ghostProfilePath } from '@/lib/ghost-handle';
 import { Link } from 'react-router';
 import { ArrowUpRight, Users, GitBranch, Globe, Clock, UserCircle, HandHeart } from 'lucide-react';
 import { kindLabels, tagsOf, type Work } from '@/lib/network';
@@ -15,7 +16,7 @@ export function ProjectCard({ work, contributors = 0 }: { work: Work; contributo
   const isCommunity = work.kind === 'community';
   const status = projectStatusLabel(work.project_status);
   const handle = work.expand?.author?.handle;
-  const profileUrl = handle ? `/ghosts/${handle}` : '/ghosts';
+  const profileUrl = handle ? ghostProfilePath(handle, work.expand?.author?.example) : '/ghosts';
   const roles = tagsOf(work.roles_needed);
   const tech = tagsOf(work.technologies);
   const langLabel = contentLanguageLabel(work.language);

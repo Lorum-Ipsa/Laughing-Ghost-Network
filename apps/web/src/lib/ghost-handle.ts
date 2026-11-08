@@ -6,9 +6,9 @@
  * encoding reversible even when a member types the literal "~2F".
  * Other reserved URL characters are percent-encoded by encodeURIComponent.
  */
-export function ghostProfilePath(handle: string): string {
+export function ghostProfilePath(handle: string, example = false): string {
   const slug = handle.replace(/~/g, '~7E').replace(/\//g, '~2F');
-  return '/ghosts/' + encodeURIComponent(slug);
+  return '/ghosts/' + (example ? '~demo-' : '') + encodeURIComponent(slug);
 }
 
 /** React Router already percent-decodes the route parameter. */

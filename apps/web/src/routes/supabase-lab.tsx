@@ -27,7 +27,6 @@ export function loader() {
 
 /**
  * Isolated integration test for Supabase Auth + public Ghost identities.
- * The real /join, /login and /ghost-space pages still use PocketBase.
  * An unconfirmed signup receives no session; complete email confirmation
  * and sign in before claiming a persistent handle.
  */
@@ -128,7 +127,7 @@ export default function SupabaseIdentityLab() {
     const { error: authError } = await client.auth.signInWithPassword({ email: email.trim(), password });
     if (authError) throw authError;
     setPassword('');
-    return 'Signed in with Supabase. Your session is separate from your PocketBase session.';
+    return 'Signed in to the Supabase identity lab.';
   }
 
   async function signOut() {
@@ -200,7 +199,7 @@ export default function SupabaseIdentityLab() {
       <span className="eyebrow"><span className="tiny-dot" /> PRIVATE DEVELOPMENT / SUPABASE</span>
       <h1>Ghost identity lab<span className="accent-period">.</span></h1>
       <p className="muted-note">
-        Development-only integration test. Your live site and ordinary LGN sign-in still use PocketBase.
+        Development-only integration test with a separate browser session.
         Do not create real accounts or enter production credentials here.
       </p>
       {!configured && (

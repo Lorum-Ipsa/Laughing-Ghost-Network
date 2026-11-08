@@ -1,7 +1,6 @@
 import type { Route } from './+types/table-talks';
-import { publicSupabaseTableTalks } from '@/lib/supabase-public.server';
+import { publicSupabaseTableTalks, publicWork } from '@/lib/supabase-public.server';
 import { seo } from '@/lib/seo';
-import { getPublicWork } from '@/lib/network.server';
 import { librarySections } from '@/data/navigation';
 import { PageHeading } from '@/components/page-heading';
 import { TableTalksLibrary } from '@/components/table-talks/table-talks-library';
@@ -17,13 +16,8 @@ export function meta({ matches, location }: Route.MetaArgs) {
 }
 
 export async function loader() {
-  const [talks,legacy]=await Promise.all([
-    publicSupabaseTableTalks(),getPublicWork().catch(()=>null),
-  ]);
-  return {
-    talks,work:(legacy??[]).filter(work=>(section.kinds as readonly string[]).includes(work.kind)),
-    legacyUnavailable:legacy===null,
-  };
+  const [talks, allWork] = await Promise.all([publicSupabaseTableTalks(), publicWork()]);
+  return { talks, work: allWork.filter(work => (section.kinds as readonly string[]).includes(work.kind)) };
 }
 
 export default function TableTalks({ loaderData }: Route.ComponentProps) {
@@ -32,7 +26,7 @@ export default function TableTalks({ loaderData }: Route.ComponentProps) {
       <PageHeading {...section} />
       <section className="rail">
         <h2>Community exercises</h2>
-        {loaderData.talks.length===0&&<p>No published exercises in the new workspace yet.</p>}
+        {loaderData.talks.length===0&&<p>No member exercises have been published yet.</p>}
         <ul className="gs-card-list">{loaderData.talks.map(talk=><li className="dashboard-panel" key={talk.id}>
           <h3>{talk.title}</h3><p>{talk.summary}</p><p>{talk.status.replaceAll('_',' ')}</p>
           {talk.scheduled_at&&<p><time dateTime={talk.scheduled_at}>
@@ -40,7 +34,6 @@ export default function TableTalks({ loaderData }: Route.ComponentProps) {
           </time></p>}
         </li>)}</ul>
       </section>
-      {loaderData.legacyUnavailable&&<p className="rail" role="status">The historical exercise library is temporarily unavailable.</p>}
       <TableTalksLibrary work={loaderData.work} />
     </main>
   );

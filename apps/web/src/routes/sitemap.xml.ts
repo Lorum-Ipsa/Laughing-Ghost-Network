@@ -1,6 +1,7 @@
 import type { Route } from './+types/sitemap.xml';
 import { siteOrigin } from '@/lib/site-origin.server';
-import { getPublicGhosts, getPublicWork } from '@/lib/network.server';
+import { publicGhosts, publicWork } from '@/lib/supabase-public.server';
+import { ghostProfilePath } from '@/lib/ghost-handle';
 
 type SitemapEntry = {
 	path: string;
@@ -44,9 +45,9 @@ function serializeSitemap(origin: string, entries: SitemapEntry[]): string {
  * again in the same change that removes the collection.
  */
 async function getDynamicEntries(): Promise<SitemapEntry[]> {
-    const [profiles, work] = await Promise.all([getPublicGhosts(), getPublicWork()]);
+    const [profiles, work] = await Promise.all([publicGhosts(), publicWork()]);
     return [
-        ...profiles.map(profile => ({ path: `/ghosts/${encodeURIComponent(profile.handle)}`, lastmod: profile.updated.replace(' ', 'T') })),
+        ...profiles.map(profile => ({ path: `${ghostProfilePath(profile.handle, profile.example)}`, lastmod: profile.updated.replace(' ', 'T') })),
         ...work.map(item => ({ path: `/work/${item.id}`, lastmod: item.updated.replace(' ', 'T') })),
     ];
 }

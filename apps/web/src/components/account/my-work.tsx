@@ -1,9 +1,0 @@
-import { useState } from 'react';
-import { Link } from 'react-router';
-import { pocketbaseClient as pb } from '@/lib/pocketbase-client';
-import { kindLabels, type Work } from '@/lib/network';
-export function MyWork({ work, onRefresh }: { work: Work[]; onRefresh: () => void }) {
-  const [busy, setBusy] = useState(''); const [error, setError] = useState(''); const [confirmId, setConfirmId] = useState('');
-  async function remove(id: string) { setBusy(id); setError(''); try { await pb.collection('ghost_work').delete(id); setConfirmId(''); onRefresh(); } catch { setError('Could not delete this contribution. Please try again.'); } finally { setBusy(''); } }
-  return <section className="dashboard-panel"><div className="section-heading" style={{ marginTop: 0 }}><h2>My contributions</h2><Link className="text-link" to="/contribute">New work ↗</Link></div>{error && <p className="status-message error-message" role="alert">{error}</p>}{!work.length && <p className="muted-note">No contribution submitted yet. Your next work starts here.</p>}{work.map(item => <article className="dashboard-item" key={item.id}><span className="item-status">{kindLabels[item.kind].toUpperCase()} / {item.status === 'published' ? 'PUBLISHED' : item.status === 'rejected' ? 'NOT ACCEPTED' : 'PENDING REVIEW'}</span><h3 style={{ marginTop: 10 }}>{item.title}</h3><p>{item.summary}</p><div className="item-actions">{item.status === 'published' && <Link to={`/work/${item.id}`}>View publication ↗</Link>}{confirmId === item.id ? <><span className="muted-note">Delete permanently?</span><button disabled={busy === item.id} onClick={() => remove(item.id)}>{busy === item.id ? 'Deleting…' : 'Confirm'}</button><button onClick={() => setConfirmId('')}>Cancel</button></> : <button onClick={() => setConfirmId(item.id)}>Remove my contribution</button>}</div></article>)}</section>;
-}

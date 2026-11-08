@@ -1,3 +1,4 @@
+import { demoProfiles, showcaseWork } from '@/data/library-showcases';
 import { createClient } from '@supabase/supabase-js';
 import { supabasePublicConfig } from '@/lib/supabase-browser';
 import type { Database } from '@/lib/supabase.database.types';
@@ -16,7 +17,7 @@ function publicApi() {
     auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false},
   });
 }
-export function asLegacyProfile(row:PublicGhostRow):GhostProfile {
+export function asPublicProfile(row:PublicGhostRow):GhostProfile {
   return {
     id:row.id,owner:'',handle:row.handle,display_name:row.display_name,
     pronouns:row.pronouns,bio:row.bio,specialties:row.specialties,
@@ -42,7 +43,7 @@ export async function publicSupabaseGhost(handle:string):Promise<GhostProfile|nu
   const {data,error}=await api.from('ghost_profiles').select(PROFILE_FIELDS)
     .eq('handle',handle).maybeSingle();
   if(error)throw error;
-  return data?asLegacyProfile(data as PublicGhostRow):null;
+  return data?asPublicProfile(data as PublicGhostRow):null;
 }
 export async function publicSupabaseDirectory():Promise<DirectoryGhost[]>{
   const api=publicApi();
@@ -55,7 +56,7 @@ export async function publicSupabaseDirectory():Promise<DirectoryGhost[]>{
   if(error)throw error;
   if(workError)throw workError;
   return (data||[]).map(row=>{
-    const profile=asLegacyProfile(row as PublicGhostRow);
+    const profile=asPublicProfile(row as PublicGhostRow);
     const evidence=KIND_ORDER.reduce((acc,k)=>{acc[k]=0;return acc;},{} as Record<WorkKind,number>);
     const authored=(work||[]).filter(item=>item.profile_id===profile.id);
     for(const item of authored) {
@@ -78,7 +79,7 @@ export async function publicSupabaseDirectory():Promise<DirectoryGhost[]>{
 const WORK_FIELDS='id,profile_id,kind,title,language,domain,summary,body,tags,source_url,code,status,version,submitted_at,published_at,created_at,updated_at' as const;
 type PublicContribution=Omit<Database['public']['Tables']['ghost_contributions']['Row'],'owner_id'|'deleted_at'>;
 
-function asLegacyWork(row:PublicContribution,profile:GhostProfile):Work {
+function asPublicWork(row:PublicContribution,profile:GhostProfile):Work {
   const kind:WorkKind=Object.prototype.hasOwnProperty.call(kindLabels,row.kind)
     ? row.kind as WorkKind : 'writeup';
   return {
@@ -104,7 +105,7 @@ export async function publicSupabaseWork():Promise<Work[]> {
     if(error)throw error;
     for(const {ghost_profiles:author,...row} of data){
       if(author&&Object.prototype.hasOwnProperty.call(kindLabels,row.kind)){
-        work.push(asLegacyWork(row,asLegacyProfile(author)));
+        work.push(asPublicWork(row,asPublicProfile(author)));
       }
     }
     if(data.length<pageSize)return work;
@@ -117,7 +118,7 @@ export async function publicSupabaseWorkByProfile(profile:GhostProfile):Promise<
     .eq('profile_id',profile.id).eq('status','published')
     .order('published_at',{ascending:false}).limit(100);
   if(error)throw error;
-  return (data||[]).map(row=>asLegacyWork(row as PublicContribution,profile));
+  return (data||[]).map(row=>asPublicWork(row as PublicContribution,profile));
 }
 export async function publicSupabaseContribution(id:string):Promise<Work|null>{
   const api=publicApi();if(!api)return null;
@@ -129,7 +130,7 @@ export async function publicSupabaseContribution(id:string):Promise<Work|null>{
     .select(PROFILE_FIELDS).eq('id',data.profile_id).maybeSingle();
   if(authorError)throw authorError;
   if(!author)return null;
-  return asLegacyWork(data as PublicContribution,asLegacyProfile(author as PublicGhostRow));
+  return asPublicWork(data as PublicContribution,asPublicProfile(author as PublicGhostRow));
 }
 
 export async function publicSupabaseMaterials(id:string,version:number) {
@@ -189,4 +190,36 @@ export async function publicSupabaseTableTalks() {
   if(error?.code==='PGRST205')return [];
   if(error)throw error;
   return data;
+}
+
+export async function publicDirectory(): Promise<DirectoryGhost[]> {
+  const members = await publicSupabaseDirectory();
+  const demos = demoProfiles.map(profile => {
+    const work = showcaseWork.filter(item => item.author === profile.id);
+    const evidence = Object.fromEntries(KIND_ORDER.map(kind =>
+      [kind, work.filter(item => item.kind === kind).length])) as DirectoryGhost['evidence'];
+    const searchIndex = [profile.handle, profile.bio, profile.specialties,
+      ...work.flatMap(item => [item.title, item.summary, item.tags, kindLabels[item.kind]])]
+      .join(' ').toLowerCase();
+    return { profile, evidence, searchIndex };
+  });
+  return [...members, ...demos];
+}
+
+export async function publicGhosts(): Promise<GhostProfile[]> {
+  return (await publicDirectory()).map(({ profile }) => profile);
+}
+
+export async function publicGhost(handle: string, example: boolean): Promise<GhostProfile | null> {
+  const demo = demoProfiles.find(profile => profile.handle === handle) ?? null;
+  return example ? demo : (await publicSupabaseGhost(handle)) ?? demo;
+}
+
+export async function publicWorkByProfile(profile: GhostProfile): Promise<Work[]> {
+  return profile.example ? showcaseWork.filter(item => item.author === profile.id)
+    : publicSupabaseWorkByProfile(profile);
+}
+
+export async function publicWork(): Promise<Work[]> {
+  return [...await publicSupabaseWork(), ...showcaseWork];
 }

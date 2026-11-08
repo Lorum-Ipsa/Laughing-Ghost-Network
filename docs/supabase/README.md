@@ -6,9 +6,8 @@
 
 - **User-tested account flow:** normal `/join` registration, Hostinger/Supabase verification mail, confirmation, sign-in, password recovery and profile persistence.
 - **Implemented on the feature branch:** rich Ghost profile editor, Supabase public profile route and searchable directory, private contribution drafts, submission for review, withdraw/archive/restore, owner-only version snapshots.
-- **Verified automatically:** GitHub frontend build, TypeScript, preview smoke, PocketBase clean migration, and **23 identity + 14 contribution** PostgreSQL permission checks, all rolled back.
+- **Verified automatically:** GitHub frontend build, TypeScript, preview smoke and **23 identity + 14 contribution** PostgreSQL permission checks, all rolled back.
 - **Owner-tested:** profile preview, editing and concise contribution submission. **Pending acceptance:** new case-preserving handles, moderator review UI and full two-account browser/API security.
-- **New features implemented:** mixed-case punctuated handles including paired `//`, safe public profile links and synchronous rules-bot triage; gated reviewer queue with request-revision, reject and publish actions, private feedback and public approved-work pages. **Still not production-ready:** reviewer role-assignment UI, private field visibility, avatar uploads, projects, Table Talks, notifications and SSR/PKCE hardening.
 
 ## Data and RLS boundaries
 
@@ -64,8 +63,18 @@ The security advisor flags the intentional callable SECURITY DEFINER review RPC 
 
 ## Known operational constraints
 
-- Current Ghost profile public pages can render Supabase profile fields. Supabase contribution **publishing** is now implemented for authorized reviewers; the public work detail route still uses the legacy model.
+- Public Ghost profiles, contributions, projects, and Table Talks use Supabase. The app bundles its fictional examples separately.
 - Projects/Table Talks/notifications and privileged administrative operations are not available on the new Supabase account system.
 - Codespaces works through **desktop VS Code / private port 3000 / localhost** in the current test environment; GitHub's remote `app.github.dev` forwarding previously returned 404 despite the server responding correctly.
 - Development-mode public publishable credentials must be replaced by environment-specific credentials for deployments. No secret keys or SMTP passwords belong in the repo.
 - Browser-only implicit auth is not the final production SSR/PKCE architecture. Cookie and cache-boundary review is mandatory before deployment.
+
+## Phase 1 acceptance
+
+- [Publication and moderation](handle-moderation-acceptance.md)
+- [Projects](projects-acceptance.md)
+- [Table Talks](table-talks-acceptance.md)
+- [Network](network-acceptance.md)
+- [Notifications and push](notifications-acceptance.md)
+- [Direct messages and encryption](messages-acceptance.md)
+- [Settings and translation](settings-acceptance.md)

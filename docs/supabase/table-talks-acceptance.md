@@ -2,7 +2,6 @@
 
 New Table Talks use Supabase. Facilitators draft and publish briefs, schedule and run exercises, assign roles, prepare scenarios and decision points, and write debriefs. Open and scheduled exercises accept registrations from verified active Ghosts. Materials unlock at the start. Each participant can see their own decisions, and the facilitator can see all decisions. The debrief unlocks on completion. Public routes read briefs only.
 
-Historical PocketBase exercises remain in a separate library pending an approved import and URL reconciliation. The new workflow has no PocketBase writes.
 
 ## Development and hands-on acceptance
 
@@ -14,4 +13,5 @@ Historical PocketBase exercises remain in a separate library pending an approved
 - [ ] As A, read B's decision and prepare the debrief. As B, confirm the debrief stays private until A completes the session.
 - [ ] Complete the exercise. Confirm B can read the debrief, late decisions are rejected, and visitors still cannot read materials or participant data.
 - [ ] Archive the session. Confirm it disappears from the public list and remains visible to A.
-- [ ] Reconcile historical exercise and participation records before retiring PocketBase reads. Obtain final approval before merge or production deployment.
+
+The cutover uses Supabase for member records and keeps the original fictional exercise in the public library as built-in content. The maintainer confirmed there were no active legacy accounts to reconcile. Obtain final approval before merge or production deployment.

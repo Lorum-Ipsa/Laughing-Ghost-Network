@@ -4,7 +4,6 @@ import { reactRouter } from '@react-router/dev/vite';
 import { defineConfig } from 'vite';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
-const pocketbaseTarget = process.env.POCKETBASE_URL || 'http://127.0.0.1:8090';
 // GitHub Codespaces forwards private preview traffic through the Codespace's
 // app.github.dev hostname. Bind to the container network and explicitly allow
 // that hostname, without allowing arbitrary Internet Host headers.
@@ -19,13 +18,6 @@ export default defineConfig({
       : undefined,
     strictPort: true,
     port: 3000,
-    proxy: {
-      '/hcgi/platform': {
-        target: pocketbaseTarget,
-        changeOrigin: true,
-        rewrite: (url) => url.replace(/^\/hcgi\/platform(?=\/|$)/, ''),
-      },
-    },
   },
   resolve: {
     alias: { '@': path.resolve(root, 'src') },

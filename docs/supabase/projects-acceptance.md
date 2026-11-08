@@ -17,10 +17,10 @@ Development SQL and automated database acceptance are complete. Hands-on browser
 - [ ] Remove B and confirm their task assignment clears and private access ends. Invite B by exact handle, then verify only B can accept. Confirm A can cancel an outstanding invitation and B can decline one.
 - [ ] Archive the project. Confirm it remains visible to A and disappears from public listings.
 
-## Historical cutover and deployment
+## Cutover and deployment
 
-- [ ] Reconcile the approved PocketBase export against Supabase Ghost identities. Preserve project IDs or record redirects, and verify membership, tasks, updates, roles, and milestones against the source. Keep source exports and private data out of GitHub.
-- [ ] Verify historic Projects links and current Supabase workflows with PocketBase stopped before removing the legacy Projects reader.
 - [ ] Record final approval, staging and production migration order, data backup, and rollback ownership. Confirm release approval before merge or deployment.
 
 If rollback is required after Projects data exists, preserve the Supabase tables and disable the affected UI while preparing a reviewed rollback. Accepted members can access collaboration details while the brief is public and unarchived. Changing the brief to private makes it maintainer-only.
+
+The cutover uses Supabase for member records and keeps the original fictional project in the public library as built-in content. The maintainer confirmed there were no active legacy accounts to reconcile. Obtain final approval before merge or production deployment.

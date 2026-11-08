@@ -1,53 +1,14 @@
-# Local development — first migration validation
+# Run LGN locally
 
-The Horizons export is **not yet certified to run independently**. This guide is for a disposable development environment only. Keep the existing Horizons website running until staging has been tested.
+Install Git, Node.js 22+, and Bun. From the repository root:
 
-## Tools and installation
-
-Install Git, Node.js 22+, [Bun](https://bun.sh/), and **PocketBase 0.40.4** (the version recorded in `apps/pocketbase/.pocketbase-version`). Do not assume the latest PocketBase is migration-compatible. Use a new local database, not live member data.
-
-From the LGN checkout on Windows PowerShell:
-
-```powershell
-git switch feature/horizons-source-import
+```sh
 bun install --frozen-lockfile
-node scripts/check-repository.mjs
-node scripts/check-app-source.mjs
-bun run build
+bun run check:source
 bun run typecheck
+bun run dev
 ```
 
-## Backend — separate terminal
+Open `http://127.0.0.1:3000`. The Vite development preview defaults to the shared `lgn-development` Supabase project. Use dedicated test accounts and synthetic content. To point the app at another development project, copy `apps/web/.env.example` to `apps/web/.env.local` and set that project's HTTPS URL and public publishable key.
 
-Place PocketBase on your PATH (or run its binary via its full path), then:
-
-```powershell
-cd apps/pocketbase
-$env:PB_ENCRYPTION_KEY = -join ([Security.Cryptography.RandomNumberGenerator]::GetBytes(16) | ForEach-Object { $_.ToString("x2") })
-$env:LGN_APP_URL = "http://127.0.0.1:3000"
-pocketbase serve --http=127.0.0.1:8090 --encryptionEnv=PB_ENCRYPTION_KEY --dir=./pb_data --migrationsDir=./pb_migrations --hooksDir=./pb_hooks
-```
-
-The example above generates a valid 32-character encryption key for a fresh disposable database. Preserve that key securely between restarts of the same database; changing it can make previously encrypted fields unreadable. Only bind the backend to localhost. Set up a **PocketBase superuser** using its private local installation flow (or `pocketbase superuser create EMAIL PASSWORD --dir=./pb_data`; do not paste real passwords into shared logs). Then deliberately create a separate LGN `users` member, assign `role=admin` in the PocketBase administration interface, and test its permissions. These are **two distinct identities**.
-
-## Web — another terminal
-
-Open a new terminal in the repository root. Set the following environment variables for that terminal, using your **local test** superuser, if server-rendered routes need privileged reads: `POCKETBASE_URL`, `PB_SUPERUSER_EMAIL`, `PB_SUPERUSER_PASSWORD`. Never place them in source control.
-
-```powershell
-npm run dev --workspace web
-```
-
-Open `http://127.0.0.1:3000`. Vite's development proxy forwards `/hcgi/platform` to the local PocketBase port 8090. **Production requires a separate proxy and SSR hosting plan**; a successful local website does not make this deployable.
-
-## Before merging PR #3
-
-- [ ] GitHub Actions dependency installation, build, and typecheck pass
-- [ ] PocketBase migrations complete on an empty test database
-- [ ] User accounts cannot elevate role, moderator flag, verification, or suspension
-- [ ] Administrative user has correct access; moderators cannot change roles
-- [ ] Login, registration, password reset, and email verification checked
-- [ ] SSR routes and backend proxy work outside Horizons
-- [ ] Assets, copyright, staging privacy, deployment and rollback reviewed
-
-No live database, keys, or member data may be pushed to GitHub.
+For a production-mode preview, set the environment-specific public URL and publishable key before running `bun run build`, then run `bun run start`. The development fallback is available only in Vite dev mode. See the [Supabase acceptance checklists](supabase/README.md) for rollout and browser verification.

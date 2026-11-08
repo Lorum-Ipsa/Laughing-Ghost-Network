@@ -47,7 +47,7 @@ export function DirectoryCard({ ghost }: { ghost: DirectoryGhost }) {
           {profile.open_to_speaking && <span className="status-pill">Open to speaking</span>}
         </div>
       )}
-      <Link to={ghostProfilePath(profile.handle)} className="text-link directory-link">Profile and proofs of work <ArrowUpRight size={15} /></Link>
+      <Link to={ghostProfilePath(profile.handle, profile.example)} className="text-link directory-link">Profile and proofs of work <ArrowUpRight size={15} /></Link>
     </article>
   );
 }
