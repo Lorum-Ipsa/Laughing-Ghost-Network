@@ -50,6 +50,8 @@ jobs:
         run: node --check apps/web/public/lgn-push-sw.js
       - name: Verify direct-message cryptography
         run: bun test apps/web/tests/dm-crypto.test.ts
+      - name: Verify Research and Arsenal search
+        run: bun test apps/web/tests/work-search.test.ts
       - name: Build SSR frontend
         run: bun run build
       - name: Typecheck

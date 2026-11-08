@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
+import { workIdentifiers, workSearchText } from '@/lib/work-search';
 import { Search, X, SlidersHorizontal, ArrowUpRight } from 'lucide-react';
 import { WorkCard, type WorkCardMeta } from '@/components/work-card';
 import { SearchableMultiSelect } from '@/components/ghosts/searchable-multi-select';
@@ -10,7 +11,7 @@ import {
 } from '@/data/research';
 import { TOOL_OPTIONS, PLATFORM_OPTIONS, INDUSTRY_OPTIONS } from '@/data/taxonomy';
 import { contentLanguageLabel } from '@/lib/languages';
-import { KIND_ORDER, evidenceLabels, kindLabels, tagsOf, type Work, type WorkKind } from '@/lib/network';
+import { KIND_ORDER, evidenceLabels, tagsOf, type Work, type WorkKind } from '@/lib/network';
 
 type Filters = {
   query: string;
@@ -37,14 +38,6 @@ const DEFAULT_FILTERS: Filters = {
 /** Hydration-safe publication label — explicit locale + UTC is deterministic. */
 function formatPublished(dateStr: string): string {
   return new Date(dateStr).toLocaleString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' });
-}
-
-function extractIds(text: string, pattern: RegExp): string[] {
-  const ids = new Set<string>();
-  const re = new RegExp(pattern.source, pattern.flags);
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(text)) !== null) ids.add(m[0].toUpperCase());
-  return [...ids];
 }
 
 type ArtifactMap = Map<string, Record<WorkKind, number>>;
@@ -88,9 +81,11 @@ export function ResearchLibrary({ work, allWork }: { work: Work[]; allWork: Work
     const authors = new Map<string, string>();
     const languages = new Set<string>();
     const attackRe = /^T\d{4}(\.\d{3})?$/i;
-    const vulnRe = /^(?:CVE|CWE)-\d{4}-?\d+$/i;
+    const vulnRe = /^(?:CVE-\d{4}-\d{4,}|CWE-\d+)$/i;
     for (const item of work) {
       if (item.domain) tagsOf(item.domain).forEach((d) => domains.add(d));
+      workIdentifiers(item, ATTACK_PATTERN).forEach(id => attack.add(id));
+      workIdentifiers(item, VULN_PATTERN).forEach(id => vulns.add(id));
       const allTags = tagsOf(item.tags);
       for (const tag of allTags) {
         const up = tag.toUpperCase();
@@ -122,20 +117,7 @@ export function ResearchLibrary({ work, allWork }: { work: Work[]; allWork: Work
     };
   }, [work]);
 
-  const searchIndex = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const item of work) {
-      const author = item.expand?.author;
-      map.set(item.id, [
-        item.title, item.summary, item.body, item.tags, item.kind, kindLabels[item.kind],
-        item.source, item.domain, extractIds(item.tags, ATTACK_PATTERN).join(' '),
-        extractIds(item.tags, VULN_PATTERN).join(' '),
-        author?.handle, author?.specialties, author?.skills, author?.tools,
-        author?.platform, author?.industry, author?.languages,
-      ].filter(Boolean).join(' ').toLowerCase());
-    }
-    return map;
-  }, [work]);
+  const searchIndex = useMemo(() => new Map(work.map(item => [item.id, workSearchText(item)])), [work]);
 
   const results = useMemo(() => {
     const tokens = filters.query.toLowerCase().split(/\s+/).filter(Boolean);
@@ -171,8 +153,8 @@ export function ResearchLibrary({ work, allWork }: { work: Work[]; allWork: Work
       if (tagSet.size || attackSet.size || vulnSet.size) {
         const itemTags = tagsOf(item.tags);
         if (tagSet.size && !itemTags.some((t) => tagSet.has(t))) return false;
-        if (attackSet.size && !itemTags.some((t) => attackSet.has(t.toUpperCase()))) return false;
-        if (vulnSet.size && !itemTags.some((t) => vulnSet.has(t.toUpperCase()))) return false;
+        if (attackSet.size && !workIdentifiers(item, ATTACK_PATTERN).some(id => attackSet.has(id))) return false;
+        if (vulnSet.size && !workIdentifiers(item, VULN_PATTERN).some(id => vulnSet.has(id))) return false;
       }
       const author = item.expand?.author;
       if (platformSet.size && !(author && tagsOf(author.platform || '').some((p) => platformSet.has(p)))) return false;

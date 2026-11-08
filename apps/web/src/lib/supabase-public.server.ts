@@ -103,7 +103,9 @@ export async function publicSupabaseWork():Promise<Work[]> {
       .range(offset,offset+pageSize-1);
     if(error)throw error;
     for(const {ghost_profiles:author,...row} of data){
-      if(author)work.push(asLegacyWork(row,asLegacyProfile(author)));
+      if(author&&Object.prototype.hasOwnProperty.call(kindLabels,row.kind)){
+        work.push(asLegacyWork(row,asLegacyProfile(author)));
+      }
     }
     if(data.length<pageSize)return work;
   }

@@ -16,6 +16,7 @@ export const RESEARCH_TYPES: { kind: WorkKind; label: string }[] = [
   { kind: 'investigation', label: 'Investigation' },
   { kind: 'analysis', label: 'Analysis' },
   { kind: 'papers', label: 'Paper' },
+  { kind: 'presentations', label: 'Presentation' },
   { kind: 'advisories', label: 'Advisory' },
   { kind: 'writeup', label: 'Writeup' },
   { kind: 'datasets', label: 'Dataset' },
@@ -57,4 +58,4 @@ export const REVIEW_STATUSES = [
 /** Regex for ATT&CK technique IDs (e.g. T1003, T1003.001). */
 export const ATTACK_PATTERN = /\bT\d{4}(\.\d{3})?\b/gi;
 /** Regex for CVE and CWE identifiers (e.g. CVE-2026-1234, CWE-79). */
-export const VULN_PATTERN = /\b(?:CVE|CWE)-\d{4}-?\d+\b/gi;
+export const VULN_PATTERN = /\b(?:CVE-\d{4}-\d{4,}|CWE-\d+)\b/gi;

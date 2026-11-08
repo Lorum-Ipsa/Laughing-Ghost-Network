@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
+import { artifactPlatforms, artifactTools, workSearchText } from '@/lib/work-search';
 import { Search, X, SlidersHorizontal, ArrowUpRight } from 'lucide-react';
 import { WorkCard, type WorkCardMeta } from '@/components/work-card';
 import { SearchableMultiSelect } from '@/components/ghosts/searchable-multi-select';
 import { ALL_SPECIALTIES } from '@/data/specialties';
 import { ARSENAL_TYPES, VALIDATION_STATUSES, FORMAT_OPTIONS } from '@/data/arsenal';
 import { TOOL_OPTIONS, PLATFORM_OPTIONS } from '@/data/taxonomy';
-import { KIND_ORDER, evidenceLabels, kindLabels, tagsOf, type ValidationStatus, type Work, type WorkKind } from '@/lib/network';
+import { KIND_ORDER, evidenceLabels, tagsOf, type ValidationStatus, type Work, type WorkKind } from '@/lib/network';
 
 type Filters = {
   query: string;
@@ -86,19 +87,7 @@ export function ArsenalLibrary({ work, allWork }: { work: Work[]; allWork: Work[
     };
   }, [work]);
 
-  const searchIndex = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const item of work) {
-      const author = item.expand?.author;
-      map.set(item.id, [
-        item.title, item.summary, item.body, item.tags, item.kind, kindLabels[item.kind],
-        item.source, item.domain, item.platform, item.format, item.tool, item.version, item.license,
-        author?.handle, author?.specialties, author?.skills, author?.tools,
-        author?.platform, author?.industry, author?.languages,
-      ].filter(Boolean).join(' ').toLowerCase());
-    }
-    return map;
-  }, [work]);
+  const searchIndex = useMemo(() => new Map(work.map(item => [item.id, workSearchText(item)])), [work]);
 
   const results = useMemo(() => {
     const tokens = filters.query.toLowerCase().split(/\s+/).filter(Boolean);
@@ -115,9 +104,9 @@ export function ArsenalLibrary({ work, allWork }: { work: Work[]; allWork: Work[
       if (typeKinds.size && !typeKinds.has(item.kind)) return false;
       if (domainSet.size && !tagsOf(item.domain || '').some((d) => domainSet.has(d))) return false;
       if (authorIds.size && !authorIds.has(item.author)) return false;
-      if (platformSet.size && !tagsOf(item.platform || '').some((p) => platformSet.has(p))) return false;
+      if (platformSet.size && !artifactPlatforms(item).some((p) => platformSet.has(p))) return false;
       if (formatSet.size && !tagsOf(item.format || '').some((f) => formatSet.has(f))) return false;
-      if (toolSet.size && !tagsOf(item.tool || '').some((p) => toolSet.has(p))) return false;
+      if (toolSet.size && !artifactTools(item).some((p) => toolSet.has(p))) return false;
       if (validationSet.size && !validationSet.has((item.validation_status || 'draft') as ValidationStatus)) return false;
       return true;
     });
