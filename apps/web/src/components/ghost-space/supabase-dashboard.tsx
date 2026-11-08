@@ -5,6 +5,7 @@ import { ArrowUpRight } from 'lucide-react';
 import { useSupabaseAuth } from '@/hooks/use-supabase-auth';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { SupabaseProfileEditor } from '@/components/ghost-space/profile/supabase-profile-editor';
+import { SupabaseMfaChallenge } from '@/components/ghost-space/settings/supabase-mfa';
 import { SupabaseSettings } from '@/components/ghost-space/settings/supabase-settings';
 import { SupabaseContributions } from '@/components/ghost-space/contributions/supabase-contributions';
 import { SupabaseNotifications } from '@/components/ghost-space/notifications/supabase-notifications';
@@ -39,19 +40,37 @@ export function SupabaseGhostSpaceDashboard() {
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
   const [newHandle, setNewHandle] = useState('');
+  const [verifiedAccount,setVerifiedAccount]=useState<{userId:string;state:string}|null>(null);
+  const accountState=verifiedAccount?.userId===user?.id?verifiedAccount?.state??'checking':'checking';
+  const [accountRevision,setAccountRevision]=useState(0);
   const [canReview,setCanReview] = useState(false);
 
+  useEffect(()=>{
+    let active=true;
+    setVerifiedAccount(null);setLoading(true);setProfile(null);
+    const userId=user?.id;
+    if(!userId)return;
+    void (async()=>{
+      try{
+        const {data,error}=await supabaseBrowser().rpc('ghost_account_state');
+        if(error)throw error;
+        if(active)setVerifiedAccount({userId,state:data});
+      }catch{if(active)setVerifiedAccount({userId,state:'unavailable'});}
+    })();
+    return()=>{active=false;};
+  },[user?.id,accountRevision]);
+
   useEffect(() => {
-    if (!user?.id) { setCanReview(false); return; }
+    if (accountState!=='active'||!user?.id) { setCanReview(false); return; }
     let active=true;
     void Promise.resolve(supabaseBrowser().rpc('can_review_contributions')).then(({data,error}) => {
       if (active) setCanReview(!error && data===true);
     }).catch(()=>{if(active)setCanReview(false);});
     return()=>{active=false;};
-  }, [user?.id]);
+  }, [user?.id,accountState]);
 
   useEffect(() => {
-    if (!user?.email_confirmed_at) return;
+    if (accountState!=='active'||!user?.email_confirmed_at) return;
     let active = true;
     const initial = signupDetails(user);
     setNewHandle(initial.handle);
@@ -72,7 +91,7 @@ export function SupabaseGhostSpaceDashboard() {
       } finally { if (active) setLoading(false); }
     })();
     return () => { active = false; };
-  }, [user?.id]);
+  }, [user?.id,user?.email_confirmed_at,accountState]);
 
 
   async function claim(event: FormEvent<HTMLFormElement>) {
@@ -97,11 +116,19 @@ export function SupabaseGhostSpaceDashboard() {
     navigate('/login', { replace: true });
   }
 
-  if (isLoading || loading) return <main className="rail loading-state" style={{ padding: '60px 0' }}>Loading Ghost Space…</main>;
+  if (isLoading || (user?.email_confirmed_at&&accountState==='checking')) return <main className="rail loading-state" style={{ padding: '60px 0' }}>Loading Ghost Space…</main>;
   if (!user?.email_confirmed_at) return <main className="login-wrap form-panel">
     <p>{sessionError || 'Email confirmation is required before entering Ghost Space.'}</p>
     <Link to="/login" className="button button-light">Sign in</Link>
   </main>;
+
+  if(accountState==='mfa_required')return <SupabaseMfaChallenge
+    onVerified={()=>setAccountRevision(value=>value+1)} onSignOut={()=>void signOut()} />;
+  if(accountState!=='active')return <main className="login-wrap form-panel">
+    <p role="alert">{accountState==='deactivated'?'This Ghost account is deactivated.':'Account verification is unavailable. Refresh and try again.'}</p>
+    <button type="button" className="button button-outline" onClick={()=>void signOut()}>Sign out</button>
+  </main>;
+  if(loading)return <main className="rail loading-state">Loading Ghost Space…</main>;
 
   return (
     <GhostSpaceLayout section={section} canReview={canReview} handle={profile?.handle || 'New Ghost'}
@@ -168,7 +195,8 @@ export function SupabaseGhostSpaceDashboard() {
       ) : section === 'review' ? (
         <SupabaseReviewQueue profile={profile} />
       ) : section === 'settings' ? (
-        <SupabaseSettings key={user.id} userId={user.id} email={user.email??''} handle={profile.handle} />
+        <SupabaseSettings key={user.id} userId={user.id} email={user.email??''} handle={profile.handle}
+          onDeactivated={()=>{setVerifiedAccount({userId:user.id,state:'deactivated'});void signOut();}} />
       ) : null}
     </GhostSpaceLayout>
   );

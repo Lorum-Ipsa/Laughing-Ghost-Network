@@ -1178,6 +1178,9 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      ghost_account_state: { Args: never; Returns: string }
+      export_ghost_account: { Args: never; Returns: Json }
+      deactivate_ghost_account: { Args: { p_handle: string }; Returns: boolean }
       send_ghost_direct_message: {
         Args: { p_recipient_profile_id: string; p_client_id: string; p_body: string }
         Returns: string

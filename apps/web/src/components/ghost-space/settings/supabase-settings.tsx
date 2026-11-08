@@ -2,14 +2,17 @@ import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link } from 'react-router';
 import { CONTENT_LANGUAGES, DEFAULT_CONTENT_LANGUAGE } from '@/lib/languages';
-import { resetPasswordRedirect, supabaseBrowser } from '@/lib/supabase-browser';
+import { SupabaseMfaSettings } from './supabase-mfa';
+import { resetPasswordRedirect, supabaseBrowser, verifyEmailRedirect } from '@/lib/supabase-browser';
 
-export function SupabaseSettings({userId,email,handle}:{userId:string;email:string;handle:string}) {
+export function SupabaseSettings({userId,email,handle,onDeactivated}:{userId:string;email:string;handle:string;onDeactivated:()=>void}) {
   const [language,setLanguage]=useState(DEFAULT_CONTENT_LANGUAGE);
   const [loading,setLoading]=useState(true);
   const [busy,setBusy]=useState(false);
   const [confirmSignOut,setConfirmSignOut]=useState(false);
   const [recoverySent,setRecoverySent]=useState(false);
+  const [newEmail,setNewEmail]=useState('');
+  const [confirmHandle,setConfirmHandle]=useState('');
   const [error,setError]=useState('');
   const [notice,setNotice]=useState('');
 
@@ -51,6 +54,36 @@ export function SupabaseSettings({userId,email,handle}:{userId:string;email:stri
       'Publication language saved.','Could not save your publication language.');
   }
 
+  function changeEmail(event:FormEvent<HTMLFormElement>){
+    event.preventDefault();
+    const next=newEmail.trim();
+    if(!next||next.toLowerCase()===email.toLowerCase())return;
+    void change(()=>supabaseBrowser().auth.updateUser({email:next},{emailRedirectTo:verifyEmailRedirect()}),
+      'Email change requested. Follow the confirmation links sent by Supabase.',
+      'Could not request an email change. Check the address and try again.',()=>setNewEmail(''));
+  }
+
+  function exportAccount(){
+    void change(async()=>{
+      const result=await supabaseBrowser().rpc('export_ghost_account');
+      if(result.error)return result;
+      const blob=new Blob([JSON.stringify(result.data,null,2)],{type:'application/json'});
+      const url=URL.createObjectURL(blob);
+      const link=document.createElement('a');
+      link.href=url;link.download='lgn-account-export.json';
+      link.click();
+      window.setTimeout(()=>URL.revokeObjectURL(url),1000);
+      return result;
+    },'Account export downloaded.','Could not export this account.');
+  }
+
+  function deactivate(event:FormEvent<HTMLFormElement>){
+    event.preventDefault();
+    if(confirmHandle!==handle)return;
+    void change(()=>supabaseBrowser().rpc('deactivate_ghost_account',{p_handle:confirmHandle}),
+      'Account deactivated.','Could not deactivate this account.',onDeactivated);
+  }
+
   return <section className="gs-contributions">
     <h1>Settings</h1>
     {error&&<p role="alert">{error}</p>}{notice&&<p role="status">{notice}</p>}
@@ -58,6 +91,15 @@ export function SupabaseSettings({userId,email,handle}:{userId:string;email:stri
       <h2>Account</h2>
       <dl><dt>Ghost handle</dt><dd>@{handle}</dd><dt>Private sign-in email</dt><dd>{email||'Unavailable'}</dd></dl>
       <Link to="/ghost-space?section=profile">Edit your public profile</Link>
+      <form onSubmit={changeEmail}>
+        <h3>Change sign-in email</h3>
+        <label htmlFor="settings-new-email">New private email</label>
+        <input id="settings-new-email" type="email" autoComplete="email" required maxLength={254}
+          value={newEmail} onChange={event=>setNewEmail(event.target.value)}/>
+        <button className="button button-light" disabled={busy||!newEmail.trim()||newEmail.trim().toLowerCase()===email.toLowerCase()}>
+          Request email change
+        </button>
+      </form>
     </section>
     <section className="dashboard-panel">
       <h2>Password and sessions</h2>
@@ -78,6 +120,7 @@ export function SupabaseSettings({userId,email,handle}:{userId:string;email:stri
       </div>:<button type="button" className="button button-outline" disabled={busy}
         onClick={()=>setConfirmSignOut(true)}>Sign out other sessions</button>}
     </section>
+    <SupabaseMfaSettings />
     <form className="dashboard-panel" onSubmit={saveLanguage}>
       <h2>Publication preferences</h2>
       <p>This default applies to new contributions. You can choose a different language on each draft.</p>
@@ -92,5 +135,18 @@ export function SupabaseSettings({userId,email,handle}:{userId:string;email:stri
       <h2>Notifications</h2>
       <Link to="/ghost-space?section=notifications">Manage inbox preferences and browser push</Link>
     </section>
+    <section className="dashboard-panel">
+      <h2>Account export</h2>
+      <p>Download your account details, preferences and selected activity as JSON. The file may contain private content. Encrypted messages remain encrypted, and private browser keys are excluded.</p>
+      <button type="button" className="button button-outline" disabled={busy} onClick={exportAccount}>Download account export</button>
+    </section>
+    <form className="dashboard-panel" onSubmit={deactivate}>
+      <h2>Deactivate account</h2>
+      <p>Deactivation blocks private access and new activity and disables browser push. Your public profile, published work and attribution remain visible. There is no self-service reactivation. Export your data first if you need a copy.</p>
+      <label htmlFor="settings-deactivate-handle">Enter your exact handle ({handle}) to confirm</label>
+      <input id="settings-deactivate-handle" autoComplete="off" value={confirmHandle}
+        onChange={event=>setConfirmHandle(event.target.value)} required/>
+      <button className="button button-outline" disabled={busy||confirmHandle!==handle}>Deactivate my account</button>
+    </form>
   </section>;
 }
