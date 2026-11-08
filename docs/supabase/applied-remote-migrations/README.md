@@ -33,3 +33,5 @@ Each row records a single development migration assembled from its linked SQL fi
 Table Talks was installed on development as `20261108101201_phase1_table_talks_workspace` using [the workspace SQL](../table-talks-workspace.sql). The 13 rollback-only checks passed against the installed schema.
 
 Network was installed on development as `20261108102108_phase1_network_workspace` from [the workspace SQL](../network-workspace.sql). Nine rollback-only checks passed against the installed schema.
+
+Persistent Network connections were installed on development as `20261108102705_phase1_persistent_network_connections` from [the connection SQL](../network-persistent-connections.sql). The expanded 14-check Network suite passed against the installed schema.

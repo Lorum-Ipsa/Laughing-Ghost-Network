@@ -7,6 +7,7 @@ import type { Database } from '@/lib/supabase.database.types';
 
 type Tables=Database['public']['Tables'];
 type Request=Tables['ghost_collaboration_requests']['Row'];
+type Connection=Pick<Request,'id'|'sender_profile_id'|'recipient_profile_id'>;
 type Saved=Tables['ghost_saved_searches']['Row'];
 const profileFields='id,handle,display_name,specialties,skills,tools,industry,open_to_collaboration,open_to_research,open_to_mentorship' as const;
 type Ghost=Pick<Tables['ghost_profiles']['Row'],
@@ -16,6 +17,7 @@ type Opportunity={id:string;title:string;kind:'project'|'talk'};
 export function SupabaseNetwork({profileId}:{profileId:string}) {
   const [ghosts,setGhosts]=useState<Ghost[]>([]);
   const [requests,setRequests]=useState<Request[]>([]);
+  const [connections,setConnections]=useState<Connection[]>([]);
   const [saved,setSaved]=useState<Saved[]>([]);
   const [opportunities,setOpportunities]=useState<Opportunity[]>([]);
   const [handles,setHandles]=useState<Record<string,string>>({});
@@ -34,7 +36,7 @@ export function SupabaseNetwork({profileId}:{profileId:string}) {
     void (async()=>{
       try{
         const api=supabaseBrowser();
-        const [people,inbox,searches,projects,talks]=await Promise.all([
+        const [people,inbox,searches,projects,talks,connected]=await Promise.all([
           api.from('ghost_profiles').select(profileFields).order('handle').limit(1000),
           api.from('ghost_collaboration_requests').select('*').order('created_at',{ascending:false}).limit(100),
           api.from('ghost_saved_searches').select('*').order('name'),
@@ -42,22 +44,32 @@ export function SupabaseNetwork({profileId}:{profileId:string}) {
             .eq('recruiting',true).neq('profile_id',profileId).order('created_at',{ascending:false}).limit(5),
           api.from('ghost_table_talks').select('id,title').in('status',['open','scheduled'])
             .neq('profile_id',profileId).order('scheduled_at',{ascending:true,nullsFirst:false}).limit(5),
+          api.from('ghost_collaboration_requests').select('id,sender_profile_id,recipient_profile_id').eq('status','accepted')
+            .order('created_at',{ascending:false}).order('id').range(0,999),
         ]);
         if(people.error)throw people.error;
         if(inbox.error)throw inbox.error;
         if(searches.error)throw searches.error;
         if(projects.error)throw projects.error;
         if(talks.error)throw talks.error;
+        if(connected.error)throw connected.error;
+        const connectionRows=[...connected.data];
+        for(let offset=1000;connectionRows.length===offset;offset+=1000){
+          const {data,error}=await api.from('ghost_collaboration_requests').select('id,sender_profile_id,recipient_profile_id').eq('status','accepted')
+            .order('created_at',{ascending:false}).order('id').range(offset,offset+999);
+          if(error)throw error;
+          connectionRows.push(...data);
+        }
         const names:Record<string,string>=Object.fromEntries(people.data.map(ghost=>[ghost.id,ghost.handle]));
-        const unknown=[...new Set(inbox.data.flatMap(row=>[row.sender_profile_id,row.recipient_profile_id]))]
+        const unknown=[...new Set([...inbox.data,...connectionRows].flatMap(row=>[row.sender_profile_id,row.recipient_profile_id]))]
           .filter(id=>!(id in names));
-        if(unknown.length){
-          const {data,error}=await api.from('ghost_profiles').select('id,handle').in('id',unknown);
+        for(let offset=0;offset<unknown.length;offset+=100){
+          const {data,error}=await api.from('ghost_profiles').select('id,handle').in('id',unknown.slice(offset,offset+100));
           if(error)throw error;
           for(const row of data)names[row.id]=row.handle;
         }
         if(active){
-          setGhosts(people.data);setRequests(inbox.data);setSaved(searches.data);setHandles(names);
+          setGhosts(people.data);setRequests(inbox.data);setConnections(connectionRows);setSaved(searches.data);setHandles(names);
           setOpportunities([...projects.data.map(row=>({...row,kind:'project' as const})),
             ...talks.data.map(row=>({...row,kind:'talk' as const}))]);
         }
@@ -109,6 +121,17 @@ export function SupabaseNetwork({profileId}:{profileId:string}) {
     },'Collaboration request sent.');
   }
 
+  const counterpart=(row:Connection)=>row.sender_profile_id===profileId?row.recipient_profile_id:row.sender_profile_id;
+  const connectedIds=new Set(connections.map(counterpart));
+
+  function disconnect(row:Connection){
+    const handle=handles[counterpart(row)];
+    if(!window.confirm(`Disconnect from ${handle?'@'+handle:'this Ghost'}? The original request stays in your history.`))return;
+    void change(()=>supabaseBrowser().from('ghost_collaboration_requests')
+      .update({status:'disconnected'}).eq('id',row.id).eq('status','accepted')
+      .select('id').single(),'Connection removed.');
+  }
+
   const terms=query.toLowerCase().trim().split(/\s+/).filter(Boolean);
   const matches=ghosts.filter(ghost=>{
     if(ghost.id===profileId||collaborationOnly&&!ghost.open_to_collaboration)return false;
@@ -130,8 +153,9 @@ export function SupabaseNetwork({profileId}:{profileId:string}) {
         <ul className="gs-card-list">{matches.slice(0,25).map(ghost=><li key={ghost.id}>
           <Link to={ghostProfilePath(ghost.handle)}>{ghost.display_name||ghost.handle} · @{ghost.handle}</Link>
           {ghost.specialties&&<p>{ghost.specialties}</p>}
-          <button type="button" className="button button-outline" disabled={busy}
-            onClick={()=>{setError('');setRecipient(ghost);}}>Request collaboration</button>
+          {connectedIds.has(ghost.id)?<span>Connected</span>:
+            <button type="button" className="button button-outline" disabled={busy}
+              onClick={()=>{setError('');setRecipient(ghost);}}>Request collaboration</button>}
         </li>)}</ul>
       </section>
       <section className="dashboard-panel"><h2>Saved searches</h2>
@@ -145,6 +169,17 @@ export function SupabaseNetwork({profileId}:{profileId:string}) {
           <button type="button" disabled={busy} onClick={()=>void change(()=>supabaseBrowser().from('ghost_saved_searches')
             .delete().eq('id',search.id),'Saved search removed.')}>Remove</button>
         </li>)}</ul>
+      </section>
+      <section className="dashboard-panel"><h2>Connections</h2>
+        <p>Accepted requests stay here until either Ghost disconnects.</p>
+        {connections.length===0&&<p>No connections yet.</p>}
+        <ul>{connections.map(row=>{
+          const handle=handles[counterpart(row)];
+          return <li key={row.id}>
+            {handle?<Link to={ghostProfilePath(handle)}>@{handle}</Link>:'Ghost profile unavailable'}{' '}
+            <button type="button" disabled={busy} onClick={()=>disconnect(row)}>Disconnect</button>
+          </li>;
+        })}</ul>
       </section>
       <section className="dashboard-panel"><h2>Collaboration requests</h2>
         {(['incoming','outgoing'] as const).map(direction=>{

@@ -48,13 +48,46 @@ end $qa$;
 update public.ghost_collaboration_requests set status='accepted' where subject='QA request';
 insert into nw_results select 'recipient can accept',count(*)=1
 from public.ghost_collaboration_requests where subject='QA request' and status='accepted';
-with changed as (update public.ghost_collaboration_requests set status='declined' where subject='QA request' returning id)
-insert into nw_results select 'resolved requests cannot be reopened',count(*)=0 from changed;
+do $qa$
+begin
+ update public.ghost_collaboration_requests set status='declined' where subject='QA request';
+ raise sqlstate 'LGN01';
+exception
+ when check_violation then insert into nw_results values ('connections cannot be turned into declined requests',true);
+ when sqlstate 'LGN01' then insert into nw_results values ('connections cannot be turned into declined requests',false);
+end $qa$;
+select set_config('request.jwt.claim.sub',(select id::text from nw_users where k='other'),true);
+with changed as (update public.ghost_collaboration_requests set status='disconnected' where subject='QA request' returning id)
+insert into nw_results select 'unrelated Ghost cannot disconnect a pair',count(*)=0 from changed;
 select set_config('request.jwt.claim.sub',(select id::text from nw_users where k='a'),true);
+insert into nw_results select 'sender sees the persistent connection',count(*)=1
+from public.ghost_collaboration_requests where subject='QA request' and status='accepted';
+do $qa$
+begin
+ insert into public.ghost_collaboration_requests(sender_profile_id,recipient_profile_id,subject,message)
+ select a.id,b.id,'Redundant connection','Synthetic repeat request'
+ from public.ghost_profiles a cross join public.ghost_profiles b
+ where a.handle='NetworkQASender' and b.handle='NetworkQAReceiver';
+ raise sqlstate 'LGN01';
+exception
+ when unique_violation then insert into nw_results values ('connected Ghosts cannot send a duplicate request',true);
+ when sqlstate 'LGN01' then insert into nw_results values ('connected Ghosts cannot send a duplicate request',false);
+end $qa$;
+update public.ghost_collaboration_requests set status='disconnected' where subject='QA request';
+insert into nw_results select 'a connected Ghost can disconnect and keep request history',count(*)=1
+from public.ghost_collaboration_requests where subject='QA request' and status='disconnected';
 insert into public.ghost_collaboration_requests(sender_profile_id,recipient_profile_id,subject,message)
 select a.id,b.id,'QA withdrawal','Synthetic follow-up'
 from public.ghost_profiles a cross join public.ghost_profiles b
 where a.handle='NetworkQASender' and b.handle='NetworkQAReceiver';
+do $qa$
+begin
+ update public.ghost_collaboration_requests set status='disconnected' where subject='QA withdrawal';
+ raise sqlstate 'LGN01';
+exception
+ when check_violation then insert into nw_results values ('pending requests cannot be disconnected',true);
+ when sqlstate 'LGN01' then insert into nw_results values ('pending requests cannot be disconnected',false);
+end $qa$;
 update public.ghost_collaboration_requests set status='withdrawn' where subject='QA withdrawal';
 insert into nw_results select 'sender can withdraw a pending request',count(*)=1
 from public.ghost_collaboration_requests where subject='QA withdrawal' and status='withdrawn';
