@@ -882,6 +882,81 @@ export type Database = {
           referencedColumns: ["id"]
         }]
       }
+      ghost_notifications: {
+        Row: {
+          id: string
+          profile_id: string
+          category: string
+          type: string
+          title: string
+          body: string
+          link: string
+          read: boolean
+          archived: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          profile_id: string
+          category: string
+          type: string
+          title: string
+          body?: string
+          link: string
+          read?: boolean
+          archived?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          profile_id?: string
+          category?: string
+          type?: string
+          title?: string
+          body?: string
+          link?: string
+          read?: boolean
+          archived?: boolean
+          created_at?: string
+        }
+        Relationships: [{
+          foreignKeyName: "ghost_notifications_profile_id_fkey"
+          columns: ["profile_id"]
+          isOneToOne: false
+          referencedRelation: "ghost_profiles"
+          referencedColumns: ["id"]
+        }]
+      }
+      ghost_notification_preferences: {
+        Row: {
+          profile_id: string
+          contributions: boolean
+          projects: boolean
+          table_talks: boolean
+          collaboration: boolean
+        }
+        Insert: {
+          profile_id: string
+          contributions?: boolean
+          projects?: boolean
+          table_talks?: boolean
+          collaboration?: boolean
+        }
+        Update: {
+          profile_id?: string
+          contributions?: boolean
+          projects?: boolean
+          table_talks?: boolean
+          collaboration?: boolean
+        }
+        Relationships: [{
+          foreignKeyName: "ghost_notification_preferences_profile_id_fkey"
+          columns: ["profile_id"]
+          isOneToOne: true
+          referencedRelation: "ghost_profiles"
+          referencedColumns: ["id"]
+        }]
+      }
       ghost_profiles: {
         Row: {
           available_for_work: boolean

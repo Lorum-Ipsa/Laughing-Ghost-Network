@@ -6,6 +6,7 @@ import { useSupabaseAuth } from '@/hooks/use-supabase-auth';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { SupabaseProfileEditor } from '@/components/ghost-space/profile/supabase-profile-editor';
 import { SupabaseContributions } from '@/components/ghost-space/contributions/supabase-contributions';
+import { SupabaseNotifications } from '@/components/ghost-space/notifications/supabase-notifications';
 import { SupabaseNetwork } from '@/components/ghost-space/network/supabase-network';
 import { SupabaseTableTalks } from '@/components/ghost-space/table-talks/supabase-table-talks';
 import { SupabaseProjects } from '@/components/ghost-space/projects/supabase-projects';
@@ -21,9 +22,6 @@ const sections: GhostSpaceSection[] = [
   'dashboard', 'profile', 'contributions', 'review', 'projects', 'table-talks',
   'network', 'notifications', 'settings',
 ];
-const pendingTitles: Record<string, string> = {
-  notifications: 'Notifications',
-};
 
 export function SupabaseGhostSpaceDashboard() {
   const { user, isLoading, error: sessionError } = useSupabaseAuth();
@@ -135,7 +133,7 @@ export function SupabaseGhostSpaceDashboard() {
               </div>
               <div className="form-panel"><h2>What's available now</h2>
                 <p>Registration, email confirmation, the complete Ghost profile editor, and contribution drafting/revision history are connected to Supabase.</p>
-                <p className="muted-note">Contributions support private drafts, direct publication, and deletion. A screening concern sends work to the Review queue. Projects supports briefs, membership requests, and tasks. Table Talks supports exercises, participant decisions and debriefs. Notifications, custom avatar uploads and advanced settings remain in development.</p>
+                <p className="muted-note">Contributions support private drafts, direct publication, and deletion. A screening concern sends work to the Review queue. Projects supports briefs, membership requests, and tasks. Table Talks supports exercises, participant decisions and debriefs. Notifications brings workspace updates into a private inbox. Custom avatar uploads and advanced settings remain in development.</p>
               </div>
             </div>
             <div className="gs-grid-side">
@@ -161,6 +159,8 @@ export function SupabaseGhostSpaceDashboard() {
         <SupabaseTableTalks profileId={profile.id} />
       ) : section === 'network' ? (
         <SupabaseNetwork profileId={profile.id} />
+      ) : section === 'notifications' ? (
+        <SupabaseNotifications profileId={profile.id} />
       ) : section === 'review' ? (
         <SupabaseReviewQueue profile={profile} />
       ) : section === 'settings' ? (
@@ -169,14 +169,7 @@ export function SupabaseGhostSpaceDashboard() {
           <p>More private preferences, account recovery controls, session management and multi-factor settings are scheduled for the next migration stage.</p>
           <Link className="button button-outline" to="/ghost-space?section=profile">Edit public profile</Link>
         </div>
-      ) : (
-        <div className="gs-placeholder">
-          <span className="eyebrow"><span className="tiny-dot"/> MIGRATION IN PROGRESS</span>
-          <h1>{pendingTitles[section] || 'Ghost Space'}.</h1>
-          <p>This workspace still needs its PocketBase data model and permissions migrated to Supabase. It is temporarily unavailable for Supabase accounts rather than allowing a misleading or unauthenticated operation.</p>
-          <Link className="button button-outline" to="/ghost-space">Return to dashboard</Link>
-        </div>
-      )}
+      ) : null}
     </GhostSpaceLayout>
   );
 }
