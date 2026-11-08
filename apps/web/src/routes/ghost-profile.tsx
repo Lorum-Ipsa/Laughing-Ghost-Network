@@ -1,7 +1,7 @@
 import type { Route } from './+types/ghost-profile';
 import { seo } from '@/lib/seo';
 import { getGhost, getPublicWork } from '@/lib/network.server';
-import { publicSupabaseGhost } from '@/lib/supabase-public.server';
+import { publicSupabaseGhost,publicSupabaseWorkByProfile } from '@/lib/supabase-public.server';
 import { PageHeading } from '@/components/page-heading';
 import { Profile } from '@/components/ghosts/profile';
 import { BackToGhostSpace } from '@/components/ghosts/back-to-ghost-space';
@@ -9,7 +9,7 @@ export async function loader({ params }: Route.LoaderArgs) {
   // Supabase is the source for newly registered Ghosts; preserve PocketBase
   // demo/legacy profiles as fallback until the public content migration.
   const supabaseProfile = await publicSupabaseGhost(params.handle);
-  if (supabaseProfile) return { profile: supabaseProfile, work: [] };
+  if (supabaseProfile) return { profile: supabaseProfile, work: await publicSupabaseWorkByProfile(supabaseProfile) };
   const profile=await getGhost(params.handle);
   return { profile, work: (await getPublicWork()).filter(work=>work.author===profile.id) };
 }

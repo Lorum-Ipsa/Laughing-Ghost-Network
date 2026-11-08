@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { supabasePublicConfig } from '@/lib/supabase-browser';
 import type { Database } from '@/lib/supabase.database.types';
-import type { DirectoryGhost, GhostProfile, WorkKind } from '@/lib/network';
+import type { DirectoryGhost, GhostProfile, Work, WorkKind } from '@/lib/network';
 import { KIND_ORDER, kindLabels, locationTokens } from '@/lib/network';
 
 // Explicit public-only columns. Auth IDs, role state, deleted_at and email are
@@ -70,4 +70,44 @@ export async function publicSupabaseDirectory():Promise<DirectoryGhost[]>{
     ].filter(Boolean).join(' ').toLowerCase();
     return {profile,evidence,searchIndex};
   });
+}
+
+
+// Only published work is returned by these server-side read-only queries.
+// Never use the service-role key for public pages.
+const WORK_FIELDS='id,profile_id,kind,title,language,domain,summary,body,tags,source_url,code,status,version,submitted_at,published_at,created_at,updated_at' as const;
+type PublicContribution=Omit<Database['public']['Tables']['ghost_contributions']['Row'],'owner_id'|'deleted_at'>;
+
+function asLegacyWork(row:PublicContribution,profile:GhostProfile):Work {
+  const kind:WorkKind=Object.prototype.hasOwnProperty.call(kindLabels,row.kind)
+    ? row.kind as WorkKind : 'writeup';
+  return {
+    id:row.id,owner:'',author:profile.id,title:row.title,kind,
+    summary:row.summary,body:row.body,tags:row.tags,source:row.source_url,
+    code:row.code,status:'published',example:false,
+    language:row.language,domain:row.domain,
+    version:String(row.version),review_status:'unreviewed',
+    created:row.published_at||row.created_at,updated:row.updated_at,
+    expand:{author:profile},
+  };
+}
+export async function publicSupabaseWorkByProfile(profile:GhostProfile):Promise<Work[]> {
+  const api=publicApi();if(!api)return [];
+  const {data,error}=await api.from('ghost_contributions').select(WORK_FIELDS)
+    .eq('profile_id',profile.id).eq('status','published')
+    .order('published_at',{ascending:false}).limit(100);
+  if(error)throw error;
+  return (data||[]).map(row=>asLegacyWork(row as PublicContribution,profile));
+}
+export async function publicSupabaseContribution(id:string):Promise<Work|null>{
+  const api=publicApi();if(!api)return null;
+  const {data,error}=await api.from('ghost_contributions').select(WORK_FIELDS)
+    .eq('id',id).eq('status','published').maybeSingle();
+  if(error)throw error;
+  if(!data)return null;
+  const {data:author,error:authorError}=await api.from('ghost_profiles')
+    .select(PROFILE_FIELDS).eq('id',data.profile_id).maybeSingle();
+  if(authorError)throw authorError;
+  if(!author)return null;
+  return asLegacyWork(data as PublicContribution,asLegacyProfile(author as PublicGhostRow));
 }

@@ -2,12 +2,17 @@ import { useState } from 'react';
 import type { Route } from './+types/work-detail';
 import { seo } from '@/lib/seo';
 import { getWork, getTranslations, getRelatedWork, getRelatedByDomain, getContributorCount } from '@/lib/network.server';
+import { publicSupabaseContribution } from '@/lib/supabase-public.server';
 import { Article } from '@/components/work/article';
 import { WorkHeading } from '@/components/work/work-heading';
 import { TranslateBar } from '@/components/work/translate-bar';
 import type { Translation, Work } from '@/lib/network';
 
 export async function loader({ params }: Route.LoaderArgs) {
+  const supabaseWork=await publicSupabaseContribution(params.id);
+  if(supabaseWork) {
+    return {work:supabaseWork,translations:[],related:[],networkRelated:[],contributorCount:0};
+  }
   const work = await getWork(params.id);
   const isProject = work.kind === 'project';
   const isExercise = work.kind === 'exercise';
