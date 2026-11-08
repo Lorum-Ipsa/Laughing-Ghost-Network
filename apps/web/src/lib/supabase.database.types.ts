@@ -1,5 +1,5 @@
-// GENERATED from LGN development Supabase project after moderator-review migrations.
-// Regenerate after SQL changes; never add secrets here.
+// GENERATED from lgn-development Supabase database; never add secrets here.
+// Regenerate after changes to policies, tables, triggers or RPCs.
 
 export type Json =
   | string
@@ -98,6 +98,53 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "ghost_contribution_revisions_contribution_id_fkey"
+            columns: ["contribution_id"]
+            isOneToOne: false
+            referencedRelation: "ghost_contributions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ghost_contribution_triage: {
+        Row: {
+          contribution_id: string
+          created_at: string
+          policy_version: string
+          recommendation: string
+          resolution: string
+          resolution_note: string
+          resolved_at: string | null
+          resolved_by: string | null
+          signals: Json
+          version: number
+        }
+        Insert: {
+          contribution_id: string
+          created_at?: string
+          policy_version?: string
+          recommendation: string
+          resolution?: string
+          resolution_note?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          signals?: Json
+          version: number
+        }
+        Update: {
+          contribution_id?: string
+          created_at?: string
+          policy_version?: string
+          recommendation?: string
+          resolution?: string
+          resolution_note?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          signals?: Json
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ghost_contribution_triage_contribution_id_fkey"
             columns: ["contribution_id"]
             isOneToOne: false
             referencedRelation: "ghost_contributions"

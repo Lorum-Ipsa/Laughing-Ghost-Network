@@ -6,15 +6,38 @@ import { kindLabels, safeExternal, type WorkKind } from '@/lib/network';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import type { GhostIdentity } from '@/lib/supabase-ghost-profile';
 import type { GhostContribution } from '@/components/ghost-space/contributions/supabase-contributions';
+import type { Database } from '@/lib/supabase.database.types';
 
 const FIELDS = 'id,profile_id,kind,title,language,domain,summary,body,tags,source_url,code,status,version,submitted_at,published_at,created_at,updated_at' as const;
-type Decision = 'revision_requested'|'rejected'|'published';
-type QueueEntry = GhostContribution & { authorHandle: string };
+type Decision = 'revision_requested'|'rejected'|'published'|'triage_cleared';
+type Triage = Pick<Database['public']['Tables']['ghost_contribution_triage']['Row'],
+  'contribution_id'|'version'|'recommendation'|'signals'|'resolution'|'policy_version'|'created_at'>;
+type QueueEntry = GhostContribution & { authorHandle: string; triage?: Triage };
+type RuleSignal = {rule:string; finding:string; required_action:string};
+function botFindings(record?: Triage):RuleSignal[] {
+  return Array.isArray(record?.signals) ? record.signals.filter((value):value is RuleSignal =>
+    !!value && typeof value==='object' && !Array.isArray(value)
+    && 'rule' in value && typeof value.rule==='string'
+    && 'finding' in value && typeof value.finding==='string'
+    && 'required_action' in value && typeof value.required_action==='string'
+  ) : [];
+}
+function reviewLabel(record?: Triage):string {
+  if (!record) return 'Screening pending';
+  if (record.resolution==='cleared') return 'Investigation cleared';
+  if(record.recommendation==='investigate')return 'Further investigation';
+  if(record.recommendation==='reject_candidate')return 'Proposed rejection';
+  return 'Routine human review';
+}
+function needsClearance(record?:Triage):boolean {
+  return !record || (record.recommendation!=='human_review'&&record.resolution!=='cleared');
+}
 type Props={profile:GhostIdentity};
 const choices: {action:Decision;label:string}[]=[
   {action:'revision_requested',label:'Request revision'},
   {action:'rejected',label:'Reject'},
   {action:'published',label:'Approve & publish'},
+  {action:'triage_cleared',label:'Clear automated flag after investigation'},
 ];
 export function SupabaseReviewQueue({profile}:Props){
   const [authorized,setAuthorized]=useState<boolean|null>(null);
@@ -39,7 +62,16 @@ export function SupabaseReviewQueue({profile}:Props){
       .select('id,handle').in('id',uniqueProfiles);
     if(authorsError)throw authorsError;
     const map=new Map((authors||[]).map(item=>[item.id,item.handle]));
-    return submissions.map(item=>({...item,authorHandle:map.get(item.profile_id)||'Ghost member'}));
+    const {data:triage,error:triageError}=await api.from('ghost_contribution_triage')
+      .select('contribution_id,version,recommendation,signals,resolution,policy_version,created_at')
+      .in('contribution_id',submissions.map(item=>item.id));
+    if(triageError)throw triageError;
+    const byVersion=new Map((triage||[]).map(item=>[item.contribution_id+':'+item.version,item as Triage]));
+    const priority:Record<string,number>={investigate:0,reject_candidate:1,human_review:2};
+    return submissions.map(item=>({...item,
+      authorHandle:map.get(item.profile_id)||'Ghost member',
+      triage:byVersion.get(item.id+':'+item.version),
+    })).sort((a,b)=>(priority[a.triage?.recommendation||'']??3)-(priority[b.triage?.recommendation||'']??3));
   }
 
   useEffect(()=>{
@@ -70,7 +102,13 @@ export function SupabaseReviewQueue({profile}:Props){
       setError('You cannot review your own work. Another authorized reviewer must decide it.');return;
     }
     if(action!=='published'&&!note.trim()){
-      setError('Add a reason for a revision request or rejection.');return;
+      setError('A human reviewer must record a reason for revisions, rejection, or investigation clearance.');return;
+    }
+    if(action==='published'&&needsClearance(selected.triage)){
+      setError('This contribution is flagged or has not been screened. Resolve the investigation before publishing.');return;
+    }
+    if(action==='triage_cleared'&&(!selected.triage||!needsClearance(selected.triage))){
+      setError('Only a pending automated flag can be cleared.');return;
     }
     setBusy(true);setError('');setNotice('');
     try{
@@ -87,8 +125,10 @@ export function SupabaseReviewQueue({profile}:Props){
       setNotice(action==='published'
         ? 'Contribution approved and made public.'
         : action==='rejected'
-          ? 'Contribution rejected; the author can view the reason.'
-          : 'Revision requested; the author can see your feedback and resubmit.');
+          ? 'Contribution rejected by a human reviewer; the author can view the reason.'
+          : action==='triage_cleared'
+            ? 'Automated flag cleared with an audit note. The submission remains pending for final human review.'
+            : 'Revision requested; the author can see your feedback and resubmit.');
     }catch(e){setError(e instanceof Error?e.message:'The review failed. Refresh and check the version.');}
     finally{setBusy(false);}
   }
@@ -105,7 +145,7 @@ export function SupabaseReviewQueue({profile}:Props){
       <div>
         <span className="eyebrow"><span className="tiny-dot"/> GHOST SPACE / MODERATION</span>
         <h1>Review queue.</h1>
-        <p className="gs-section-lede">Read the submission, request changes, reject it with a reason, or publish. Decisions are versioned and audited. You cannot review your own contributions.</p>
+        <p className="gs-section-lede">LGN's rules bot screens every submitted version. Review flagged cases first, investigate or dismiss signals with a recorded reason, then decide publication. Bots never reject or publish on their own.</p>
       </div>
       <button className="button button-outline" type="button" onClick={()=>void refresh()}>
         <RefreshCw size={14}/> Refresh
@@ -128,6 +168,10 @@ export function SupabaseReviewQueue({profile}:Props){
         </div>
       </div>
       {item.summary&&<p>{item.summary}</p>}
+      <p><strong>Bot recommendation:</strong> {reviewLabel(item.triage)}</p>
+      {item.triage&&<p className="muted-note">
+        {item.triage.policy_version} · {item.triage.resolution==='pending'?'Human investigation required':item.triage.resolution==='cleared'?'Cleared by reviewer':'Awaiting final human decision'}
+      </p>}
       {item.profile_id===profile.id?
         <p className="muted-note">Your submission is visible in the queue but cannot be reviewed by you.</p>
         :<button type="button" className="button button-light" onClick={()=>{
@@ -148,10 +192,26 @@ export function SupabaseReviewQueue({profile}:Props){
         {selected.source_url&&safeExternal(selected.source_url)&&
           <p><a href={safeExternal(selected.source_url) || undefined} target="_blank" rel="noopener noreferrer">Open cited source</a></p>}
         {selected.tags&&<p className="muted-note">Tags: {selected.tags}</p>}
+        <section className="form-panel" aria-label="Automated screening results">
+          <span className="eyebrow">RULES BOT / {selected.triage?.policy_version||'UNSCREENED'}</span>
+          <h3>{reviewLabel(selected.triage)}</h3>
+          <p className="muted-note">Automated findings are suggestions, not verified violations. They never publish or reject work.</p>
+          {botFindings(selected.triage).map(finding=><div key={finding.rule} style={{marginBottom:12}}>
+            <strong>{finding.rule}: {finding.finding}</strong>
+            <p>{finding.required_action}</p>
+          </div>)}
+          {needsClearance(selected.triage)&&<p role="status">
+            Publication is blocked until an authorized reviewer investigates this version and records a clearance reason.
+          </p>}
+          {selected.triage?.resolution==='cleared'&&<p role="status">An authorized reviewer recorded a clearance; final publication still requires human approval.</p>}
+        </section>
         <div className="field">
           <label htmlFor="review-decision">Decision</label>
           <select id="review-decision" value={action} onChange={event=>setAction(event.target.value as Decision)}>
-            {choices.map(option=><option key={option.action} value={option.action}>{option.label}</option>)}
+            {choices.filter(option=>option.action!=='triage_cleared'||
+              (selected.triage?.recommendation!=='human_review'&&needsClearance(selected.triage)))
+              .map(option=><option key={option.action} value={option.action}
+                disabled={option.action==='published'&&needsClearance(selected.triage)}>{option.label}</option>)}
           </select>
         </div>
         <div className="field">
@@ -163,7 +223,9 @@ export function SupabaseReviewQueue({profile}:Props){
         {error&&<p role="alert" className="status-message error-message">{error}</p>}
         <div className="gs-builder-actions">
           <button className="button button-light" type="button" disabled={busy} onClick={()=>void decide()}>
-            <ShieldCheck size={14}/>{busy?'Recording decision…':action==='published'?'Approve & publish':action==='rejected'?'Reject contribution':'Request revision'}
+            <ShieldCheck size={14}/>{busy?'Recording decision…':action==='published'?'Approve & publish':
+              action==='rejected'?'Reject contribution':
+              action==='triage_cleared'?'Record investigation clearance':'Request revision'}
           </button>
           <button className="button button-outline" type="button" disabled={busy} onClick={()=>setSelected(null)}>Cancel</button>
         </div>
