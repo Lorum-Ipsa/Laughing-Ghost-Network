@@ -7,8 +7,9 @@ import { supabaseBrowser } from '@/lib/supabase-browser';
 import { SupabaseProfileEditor } from '@/components/ghost-space/profile/supabase-profile-editor';
 import { SupabaseContributions } from '@/components/ghost-space/contributions/supabase-contributions';
 import { SupabaseReviewQueue } from '@/components/ghost-space/review/supabase-review-queue';
+import { ghostProfilePath, validNewGhostHandle } from '@/lib/ghost-handle';
 import {
-  claimGhostProfile, findMyGhostProfile, HANDLE_PATTERN, signupDetails,
+  claimGhostProfile, findMyGhostProfile, signupDetails,
   type GhostIdentity,
 } from '@/lib/supabase-ghost-profile';
 import { GhostSpaceLayout, type GhostSpaceSection } from '@/components/ghost-space/ghost-space-layout';
@@ -57,7 +58,7 @@ export function SupabaseGhostSpaceDashboard() {
     void (async () => {
       try {
         let current = await findMyGhostProfile();
-        if (!current && HANDLE_PATTERN.test(initial.handle)) {
+        if (!current && validNewGhostHandle(initial.handle)) {
           // A handle chosen on /join is only claimed after email confirmation.
           current = await claimGhostProfile(user, initial.handle, initial);
         }
@@ -76,7 +77,7 @@ export function SupabaseGhostSpaceDashboard() {
     event.preventDefault();
     if (!user || busy) return;
     const handle = newHandle.trim();
-    if (!HANDLE_PATTERN.test(handle)) { setClaimError('Handles need 3–40 characters, starting with a letter or digit; letters, digits, . _ - ! @ # $ & + ~ are supported.'); return; }
+    if (!validNewGhostHandle(handle)) { setClaimError('Handles need 3–40 characters starting with a letter/digit. Use . _ - ! @ # $ & + ~ or //; single slashes and /// are invalid.'); return; }
     setBusy(true);
     setClaimError('');
     try {
@@ -102,7 +103,7 @@ export function SupabaseGhostSpaceDashboard() {
 
   return (
     <GhostSpaceLayout section={section} canReview={canReview} handle={profile?.handle || 'New Ghost'}
-      publicProfilePath={profile ? `/ghosts/${encodeURIComponent(profile.handle)}` : ""} onSignOut={() => { void signOut(); }}>
+      publicProfilePath={profile ? ghostProfilePath(profile.handle) : ""} onSignOut={() => { void signOut(); }}>
       {notice && <p role="status" className="status-message">{notice}</p>}
       {error && <p role="alert" className="status-message error-message">{error}</p>}
       {!profile ? (
@@ -112,7 +113,7 @@ export function SupabaseGhostSpaceDashboard() {
           <p>Your email is verified. Choose your permanent public handle. If the name you selected was taken (including a different capitalization), choose another. The exact capitalization you claim will be preserved.</p>
           <form className="form-panel" onSubmit={claim}>
             <div className="field"><label htmlFor="new-handle">Permanent Ghost handle</label>
-              <input id="new-handle" required minLength={3} maxLength={40} pattern="[A-Za-z0-9][A-Za-z0-9._!@#$&+~\-]{2,39}"
+              <input id="new-handle" required minLength={3} maxLength={40} pattern="[A-Za-z0-9](?!.*///)(?:[A-Za-z0-9._!@#$&+~\-]|//){1,39}"
                 value={newHandle} onChange={e => setNewHandle(e.target.value)} /></div>
             <button disabled={busy} className="button button-light">{busy ? 'Claiming…' : 'Claim Ghost handle'}</button>
             {claimError && <p role="alert" className="status-message error-message">{claimError}</p>}

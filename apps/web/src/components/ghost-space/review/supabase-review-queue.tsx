@@ -1,3 +1,4 @@
+import { ghostProfilePath } from '@/lib/ghost-handle';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { CheckCircle2, Clock, RefreshCw, ShieldCheck, XCircle } from 'lucide-react';
@@ -120,7 +121,7 @@ export function SupabaseReviewQueue({profile}:Props){
           <span className="eyebrow">{kindLabels[item.kind as WorkKind]||item.kind} / Submitted</span>
           <h2>{item.title}</h2>
           <p className="muted-note">
-            Author: <Link to={'/ghosts/'+encodeURIComponent(item.authorHandle)}>{item.authorHandle}</Link>
+            Author: <Link to={ghostProfilePath(item.authorHandle)}>{item.authorHandle}</Link>
             {' · '}Version {item.version}{' · '}
             <Clock size={12} style={{display:'inline'}}/> {new Date(item.submitted_at||item.created_at).toLocaleString()}
           </p>

@@ -1,5 +1,6 @@
 import type { User } from '@supabase/supabase-js';
 import { supabaseBrowser } from '@/lib/supabase-browser';
+import { validNewGhostHandle } from '@/lib/ghost-handle';
 
 export type GhostIdentity = {
   id: string;
@@ -32,7 +33,8 @@ export type GhostIdentity = {
 };
 
 const FIELDS = 'id,handle,display_name,pronouns,bio,specialties,developing_specialties,portfolio,location_disclosure,location_country,skills,tools,platform,industry,languages,language,available_for_work,open_to_collaboration,open_to_research,open_to_mentorship,open_to_speaking,collaboration_interests,external_links,avatar_template,featured_work,created_at,updated_at' as const;
-export const HANDLE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._!@#$&+~-]{2,39}$/;
+// The new helper enforces paired slashes and the actual character limit.
+export { HANDLE_PATTERN } from '@/lib/ghost-handle';
 
 export function signupDetails(user: User) {
   const data = user.user_metadata ?? {};
@@ -67,7 +69,7 @@ export async function claimGhostProfile(user: User, handle: string, fields: {
   location_country?: string;
 } = {}): Promise<GhostIdentity> {
   if (!user.email_confirmed_at) throw new Error('Verify your email before claiming a Ghost handle.');
-  if (!HANDLE_PATTERN.test(handle)) throw new Error('Use 3–40 characters starting with a letter or digit; letters, digits, . _ - ! @ # $ & + ~ are allowed.');
+  if (!validNewGhostHandle(handle)) throw new Error('Use 3–40 characters starting with a letter or digit. Punctuation includes . _ - ! @ # $ & + ~ and // (not single slashes or ///).');
   const previous = await findMyGhostProfile();
   if (previous) return previous;
   const disclosure = ['undisclosed','remote','country'].includes(fields.location_disclosure || '')

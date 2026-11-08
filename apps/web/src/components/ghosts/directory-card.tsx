@@ -1,3 +1,4 @@
+import { ghostProfilePath } from '@/lib/ghost-handle';
 import { Link } from 'react-router';
 import { ArrowUpRight } from 'lucide-react';
 import { GhostAvatar } from '@/components/ghost-avatar';
@@ -46,7 +47,7 @@ export function DirectoryCard({ ghost }: { ghost: DirectoryGhost }) {
           {profile.open_to_speaking && <span className="status-pill">Open to speaking</span>}
         </div>
       )}
-      <Link to={`/ghosts/${encodeURIComponent(profile.handle)}`} className="text-link directory-link">Profile and proofs of work <ArrowUpRight size={15} /></Link>
+      <Link to={ghostProfilePath(profile.handle)} className="text-link directory-link">Profile and proofs of work <ArrowUpRight size={15} /></Link>
     </article>
   );
 }

@@ -1,3 +1,4 @@
+import { decodeGhostProfileSlug } from '@/lib/ghost-handle';
 import type { Route } from './+types/ghost-profile';
 import { seo } from '@/lib/seo';
 import { getGhost, getPublicWork } from '@/lib/network.server';
@@ -8,9 +9,10 @@ import { BackToGhostSpace } from '@/components/ghosts/back-to-ghost-space';
 export async function loader({ params }: Route.LoaderArgs) {
   // Supabase is the source for newly registered Ghosts; preserve PocketBase
   // demo/legacy profiles as fallback until the public content migration.
-  const supabaseProfile = await publicSupabaseGhost(params.handle);
+  const decodedHandle = decodeGhostProfileSlug(params.handle);
+  const supabaseProfile = await publicSupabaseGhost(decodedHandle);
   if (supabaseProfile) return { profile: supabaseProfile, work: await publicSupabaseWorkByProfile(supabaseProfile) };
-  const profile=await getGhost(params.handle);
+  const profile=await getGhost(decodedHandle);
   return { profile, work: (await getPublicWork()).filter(work=>work.author===profile.id) };
 }
 export function meta({ matches, location, loaderData }: Route.MetaArgs) { return seo({ matches, location }, { title: `${loaderData?.profile.handle || 'Ghost'} — Profile and contributions | LGN`, description: `Discover the pseudonymous profile of ${loaderData?.profile.handle || 'this Ghost'}, their specialties and proofs of work: research, detections, writeups, and public projects.`, jsonLd: { '@context': 'https://schema.org', '@type': 'ProfilePage', mainEntity: { '@type': 'Person', name: loaderData?.profile.handle || 'Ghost' } } }); }

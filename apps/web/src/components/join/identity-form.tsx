@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router';
 import { ArrowUpRight } from 'lucide-react';
 import { useSupabaseAuth } from '@/hooks/use-supabase-auth';
 import { supabaseBrowser, verifyEmailRedirect } from '@/lib/supabase-browser';
-import { HANDLE_PATTERN } from '@/lib/supabase-ghost-profile';
+import { validNewGhostHandle } from '@/lib/ghost-handle';
 import { LOCATION_DISCLOSURES, type LocationDisclosure } from '@/lib/network';
 import { ALL_SPECIALTIES } from '@/data/specialties';
 import { SearchableMultiSelect } from '@/components/ghosts/searchable-multi-select';
@@ -30,7 +30,7 @@ export function IdentityForm() {
     setError('');
     try {
       if (user?.email_confirmed_at) { navigate('/ghost-space'); return; }
-      if (!HANDLE_PATTERN.test(handle)) throw new Error('Use 3–40 characters, starting with a letter or digit; letters, numbers, . _ - ! @ # $ & + ~ are allowed.');
+      if (!validNewGhostHandle(handle)) throw new Error('Use 3–40 characters starting with a letter or digit. Allowed punctuation: . _ - ! @ # $ & + ~ and the LGN double slash //. Single slashes and /// are not allowed.');
       const password = String(data.get('password') || '');
       if (password.length < 12) throw new Error('Use a password of at least 12 characters.');
       if (password !== String(data.get('passwordConfirm') || '')) throw new Error('Passwords do not match.');
@@ -87,8 +87,8 @@ export function IdentityForm() {
       <div className="field">
         <label htmlFor="join-handle">Persistent Ghost handle *</label>
         <input id="join-handle" name="handle" required minLength={3} maxLength={40}
-          pattern="[A-Za-z0-9][A-Za-z0-9._!@#$&+~\-]{2,39}" autoComplete="off" placeholder="Ghost!One" />
-        <small>Capital letters and . _ - ! @ # $ & + ~ are allowed. Your exact capitalization is preserved, but names are reserved case-insensitively. Choose carefully: handles are permanent.</small>
+          pattern="[A-Za-z0-9](?!.*///)(?:[A-Za-z0-9._!@#$&+~\-]|//){1,39}" autoComplete="off" placeholder="Ghost!One" />
+        <small>LGN handles can include //, as in Laughing//Ghost, plus capitals and . _ - ! @ # $ &amp; + ~. A single slash and /// are not allowed. Capitalization is kept; reservations are case-insensitive and permanent.</small>
       </div>
       <div className="field">
         <label htmlFor="join-email">Private email address *</label>

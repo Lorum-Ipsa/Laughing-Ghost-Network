@@ -1,3 +1,4 @@
+import { ghostProfilePath } from '@/lib/ghost-handle';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { ArrowUpRight, Copy, Download, AlertCircle } from 'lucide-react';
@@ -15,7 +16,7 @@ export function Article({ work, translation, related = [], networkRelated = [], 
   const source = safeExternal(work.source);
   const repository = safeExternal(work.repository);
   const handle = work.expand?.author?.handle;
-  const profileUrl = handle ? `/ghosts/${encodeURIComponent(handle)}` : '/ghosts';
+  const profileUrl = handle ? ghostProfilePath(handle) : '/ghosts';
   const langLabel = contentLanguageLabel(work.language);
   const reviewLabel = reviewStatusLabel(work.review_status);
   const validationLabel = validationStatusLabel(work.validation_status);
