@@ -807,6 +807,81 @@ export type Database = {
           referencedColumns: ["id"]
         }]
       }
+      ghost_collaboration_requests: {
+        Row: {
+          id: string
+          sender_profile_id: string
+          recipient_profile_id: string
+          subject: string
+          message: string
+          status: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          sender_profile_id: string
+          recipient_profile_id: string
+          subject: string
+          message: string
+          status?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          sender_profile_id?: string
+          recipient_profile_id?: string
+          subject?: string
+          message?: string
+          status?: string
+          created_at?: string
+        }
+        Relationships: [{
+          foreignKeyName: "ghost_collaboration_requests_sender_profile_id_fkey"
+          columns: ["sender_profile_id"]
+          isOneToOne: false
+          referencedRelation: "ghost_profiles"
+          referencedColumns: ["id"]
+        }, {
+          foreignKeyName: "ghost_collaboration_requests_recipient_profile_id_fkey"
+          columns: ["recipient_profile_id"]
+          isOneToOne: false
+          referencedRelation: "ghost_profiles"
+          referencedColumns: ["id"]
+        }]
+      }
+      ghost_saved_searches: {
+        Row: {
+          id: string
+          profile_id: string
+          name: string
+          query: string
+          collaboration_only: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          profile_id: string
+          name: string
+          query?: string
+          collaboration_only?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          profile_id?: string
+          name?: string
+          query?: string
+          collaboration_only?: boolean
+          created_at?: string
+        }
+        Relationships: [{
+          foreignKeyName: "ghost_saved_searches_profile_id_fkey"
+          columns: ["profile_id"]
+          isOneToOne: false
+          referencedRelation: "ghost_profiles"
+          referencedColumns: ["id"]
+        }]
+      }
       ghost_profiles: {
         Row: {
           available_for_work: boolean

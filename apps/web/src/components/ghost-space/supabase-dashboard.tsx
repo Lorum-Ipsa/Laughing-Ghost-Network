@@ -6,6 +6,7 @@ import { useSupabaseAuth } from '@/hooks/use-supabase-auth';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { SupabaseProfileEditor } from '@/components/ghost-space/profile/supabase-profile-editor';
 import { SupabaseContributions } from '@/components/ghost-space/contributions/supabase-contributions';
+import { SupabaseNetwork } from '@/components/ghost-space/network/supabase-network';
 import { SupabaseTableTalks } from '@/components/ghost-space/table-talks/supabase-table-talks';
 import { SupabaseProjects } from '@/components/ghost-space/projects/supabase-projects';
 import { SupabaseReviewQueue } from '@/components/ghost-space/review/supabase-review-queue';
@@ -21,7 +22,7 @@ const sections: GhostSpaceSection[] = [
   'network', 'notifications', 'settings',
 ];
 const pendingTitles: Record<string, string> = {
-  network: 'Network', notifications: 'Notifications',
+  notifications: 'Notifications',
 };
 
 export function SupabaseGhostSpaceDashboard() {
@@ -158,6 +159,8 @@ export function SupabaseGhostSpaceDashboard() {
         <SupabaseProjects profileId={profile.id} />
       ) : section === 'table-talks' ? (
         <SupabaseTableTalks profileId={profile.id} />
+      ) : section === 'network' ? (
+        <SupabaseNetwork profileId={profile.id} />
       ) : section === 'review' ? (
         <SupabaseReviewQueue profile={profile} />
       ) : section === 'settings' ? (
