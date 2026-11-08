@@ -32,7 +32,7 @@ export type GhostIdentity = {
 };
 
 const FIELDS = 'id,handle,display_name,pronouns,bio,specialties,developing_specialties,portfolio,location_disclosure,location_country,skills,tools,platform,industry,languages,language,available_for_work,open_to_collaboration,open_to_research,open_to_mentorship,open_to_speaking,collaboration_interests,external_links,avatar_template,featured_work,created_at,updated_at' as const;
-export const HANDLE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._!@#export const HANDLE_PATTERN = /^[a-z0-9_/-]{3,40}$/;+~-]{2,39}$/;
+export const HANDLE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._!@#$&+~-]{2,39}$/;
 
 export function signupDetails(user: User) {
   const data = user.user_metadata ?? {};
