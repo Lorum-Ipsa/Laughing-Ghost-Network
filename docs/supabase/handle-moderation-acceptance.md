@@ -8,6 +8,13 @@ Uniqueness is case-insensitive: `Ghost!One` and `ghost!one` cannot both be claim
 
 To test the UI, register a **separate** test account using an address you control and a handle such as `Laughing//Ghost`. Verify the email, open Ghost Space, the public Ghost profile, and Search the Network. Check capitalization. A duplicate handle in a different case must be rejected at claim time.
 
+## Deferred rollout and browser checklist
+
+- [ ] After approval, apply [the version guard](review-version-guard.sql) and [the contribution workflow SQL](publish-research-with-targeted-screening.sql), in that order, to `lgn-development`.
+- [ ] Confirm the private preview points to `lgn-development` and provision a dedicated verified test reviewer with explicit approval.
+- [ ] Run the two-account browser steps below for publication, holds, reviewer permissions, revisions, and deletion.
+- [ ] Separately authorize temporary moderator access for the report and takedown test. Revoke elevated test roles after acceptance.
+
 ## Browser acceptance for direct publication and review
 
 Use a private Codespaces preview and the dedicated `lgn-development` project. This checklist requires both pending SQL changes in the order listed in the [publication policy](automated-moderation-policy.md). Confirm the preview points to development before submitting. Use two isolated browser sessions and synthetic content. Published fixtures are publicly readable through the development API.
@@ -27,6 +34,9 @@ Use a private Codespaces preview and the dedicated `lgn-development` project. Th
 7. As B, submit a synthetic held fixture of your own. Confirm it is visible in the queue and the UI offers no action to review your own submission.
 
 8. As A, delete a published fixture. Confirm the item disappears from Contributions, the Ghost profile, and its Research or Arsenal listing. The direct public article URL should return 404. Repeat with a held fixture and confirm it disappears from B's review queue.
+
+9. As A, revise a published fixture. Confirm a clean revision appears immediately at the same URL and History keeps both versions. Submit a synthetic credential marker in another revision, confirm the URL temporarily returns 404, then remove the marker and confirm the same URL returns.
+10. As A, report a published fixture using its article link. Verify A and B (reviewer role) cannot list private reports. With an explicitly authorized test moderator, open **Ghost Space → Review → Private reports** and verify the report points to the correct version. Record a reason and remove the reported version. Confirm a visitor gets 404 and that a moderator cannot remove a newer revision from an older report.
 
 Do not grant reviewer access to a real account for testing. Provision and revoke a dedicated test account's role only with explicit maintainer authorization.
 

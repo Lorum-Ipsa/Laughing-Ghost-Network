@@ -173,7 +173,6 @@ export function SupabaseContributions({profile,userId}:Props) {
       if(editing===undefined)throw new Error('No active editor.');
       let savedStatus: string;
       if(editing) {
-        if(editing.status==='published')throw new Error('Published work is locked pending the moderated revision workflow.');
         const {data,error}=await supabaseBrowser().from('ghost_contributions')
           .update({...checked,status:target})
           .eq('id',editing.id).eq('profile_id',profile.id)
@@ -278,8 +277,8 @@ export function SupabaseContributions({profile,userId}:Props) {
       </div>}
       <div className="gs-builder-actions">
         <button type="button" className="button button-outline" onClick={()=>setPreview(item)}><Eye size={14}/> Preview</button>
-        {item.status!=='published'&&<button type="button" className="button button-light"
-          onClick={()=>begin(item)}>Edit</button>}
+        <button type="button" className="button button-light"
+          onClick={()=>begin(item)}>{item.status==='published'?'Revise':'Edit'}</button>
         <button type="button" className="gs-card-action" onClick={()=>{void showRevisions(item);}}><History size={14}/> History</button>
         {item.status==='published'&&<Link className="gs-card-action" to={`/work/${item.id}`}>View public article</Link>}
         {item.status==='submitted'&&<button className="gs-card-action" type="button" disabled={busy}
@@ -295,7 +294,7 @@ export function SupabaseContributions({profile,userId}:Props) {
     {editing!==undefined&&<div className="gs-overlay" role="dialog" aria-modal="true" aria-label="Edit contribution">
       <form className="gs-overlay-panel gs-editor" onSubmit={(event:FormEvent<HTMLFormElement>)=>event.preventDefault()}>
         <header className="gs-overlay-head"><div><span className="eyebrow"><span className="tiny-dot"/> {editing?'EDIT':'NEW'} CONTRIBUTION</span>
-          <h2>{editing?'Edit contribution':'Create contribution'}</h2></div>
+          <h2>{editing?.status==='published'?'Revise published contribution':editing?'Edit contribution':'Create contribution'}</h2></div>
           <button type="button" className="gs-overlay-close" aria-label="Close editor" onClick={()=>{setEditing(undefined);setError('');}}><X size={18}/></button>
         </header>
         {error&&<p className="status-message error-message" role="alert">{error}</p>}
@@ -322,12 +321,13 @@ export function SupabaseContributions({profile,userId}:Props) {
           <input id="ce-source" type="url" maxLength={2048} value={draft.source_url} onChange={e=>editorField('source_url',e.target.value)}/></div>
         <div className="field"><label htmlFor="ce-code">Code / technical artifacts (optional)</label>
           <textarea id="ce-code" rows={6} maxLength={50000} value={draft.code} onChange={e=>editorField('code',e.target.value)}/></div>
+        {editing?.status==='published'&&<p className="muted-note">Your public link stays the same. If screening holds this revision, the article becomes private until the concern is resolved.</p>}
         <div className="callout">Add a title and a summary, description, code, or source link. Brief research contributions are welcome. Code is displayed as text. A specific screening concern can hold the contribution for review.</div>
         <div className="gs-builder-actions">
-          <button type="button" className="button button-outline" disabled={busy||editing?.status==='archived'} onClick={()=>{void save('draft');}}>
-            <Save size={14}/> {busy?'Saving…':'Save draft'}</button>
+          {editing?.status!=='published'&&<button type="button" className="button button-outline" disabled={busy||editing?.status==='archived'} onClick={()=>{void save('draft');}}>
+            <Save size={14}/> {busy?'Saving…':'Save draft'}</button>}
           {editing?.status!=='archived'&&<button type="button" className="button button-light" disabled={busy}
-            onClick={()=>{void save('submitted');}}><Send size={14}/> Publish contribution</button>}
+            onClick={()=>{void save('submitted');}}><Send size={14}/> {editing?.status==='published'?'Publish revision':'Publish contribution'}</button>}
           <button className="gs-card-action" type="button" onClick={()=>setEditing(undefined)} disabled={busy}>Cancel</button>
         </div>
       </form></div>}

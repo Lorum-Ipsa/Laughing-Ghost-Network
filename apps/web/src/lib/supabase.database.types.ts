@@ -55,6 +55,54 @@ export type Database = {
           },
         ]
       }
+      ghost_contribution_reports: {
+        Row: {
+          id: string
+          reporter_id: string
+          contribution_id: string | null
+          contribution_version: number | null
+          subject: string
+          body: string
+          created_at: string
+          outcome: string | null
+          moderator_id: string | null
+          decision_note: string | null
+          decided_at: string | null
+        }
+        Insert: {
+          id?: string
+          reporter_id?: string
+          contribution_id?: string | null
+          contribution_version?: number | null
+          subject: string
+          body: string
+          created_at?: string
+          outcome?: string | null
+          moderator_id?: string | null
+          decision_note?: string | null
+          decided_at?: string | null
+        }
+        Update: {
+          id?: string
+          reporter_id?: string
+          contribution_id?: string | null
+          contribution_version?: number | null
+          subject?: string
+          body?: string
+          created_at?: string
+          outcome?: string | null
+          moderator_id?: string | null
+          decision_note?: string | null
+          decided_at?: string | null
+        }
+        Relationships: [{
+          foreignKeyName: "ghost_contribution_reports_contribution_id_fkey"
+          columns: ["contribution_id"]
+          isOneToOne: false
+          referencedRelation: "ghost_contributions"
+          referencedColumns: ["id"]
+        }]
+      }
       ghost_contribution_revisions: {
         Row: {
           body: string
@@ -398,9 +446,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_moderate_reports: { Args: never; Returns: boolean }
       can_review_contributions: { Args: never; Returns: boolean }
       delete_ghost_contribution: {
         Args: { p_contribution_id: string; p_expected_version: number }
+        Returns: boolean
+      }
+      resolve_contribution_report: {
+        Args: { p_report_id: string; p_outcome: string; p_note: string }
         Returns: boolean
       }
       review_ghost_contribution: {

@@ -14,6 +14,12 @@ LGN displays the type of concern without copying the matched text into the findi
 
 Existing queued contributions retain their historical findings. Authors can withdraw and resubmit them under the new policy. Previously recorded findings remain available as audit history.
 
+## Published revisions and reports
+
+An owner can revise published work at its existing URL. Clean revisions publish immediately and keep prior snapshots. A held revision makes the article private until the concern is resolved. A corrected revision uses the same URL.
+
+Verified active members can submit private reports. Only active moderators and admins can resolve them or remove a reported version. Takedowns record the deciding moderator and a reason. A report on an earlier version cannot remove a newer revision.
+
 ## Owner deletion
 
 An active owner can delete any contribution state, including published and held work. The action removes the contribution from public and workspace reads. The database retains a deletion timestamp, revision history and moderation records. The deletion endpoint requires the current version and rejects other members.
@@ -33,4 +39,4 @@ Apply [the version guard](review-version-guard.sql) followed by [the publication
 
 Browser acceptance should cover publishing an ordinary contribution and an inert code sample, opening both as a signed-out visitor, and confirming that a synthetic credential marker stays private until corrected or cleared. The published-code check should confirm that markup-like text is visible literally and creates no DOM elements or script execution.
 
-The initial screen detects a limited set of credential patterns. Post-publication reporting and takedown are separate work.
+The initial screen detects a limited set of credential patterns. Translations and attachment handling are pending.

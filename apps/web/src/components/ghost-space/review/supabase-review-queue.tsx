@@ -6,6 +6,7 @@ import { kindLabels, safeExternal, type WorkKind } from '@/lib/network';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import type { GhostIdentity } from '@/lib/supabase-ghost-profile';
 import type { GhostContribution } from '@/components/ghost-space/contributions/supabase-contributions';
+import { SupabaseContributionReports } from '@/components/ghost-space/review/supabase-contribution-reports';
 import type { Database } from '@/lib/supabase.database.types';
 
 const FIELDS = 'id,profile_id,kind,title,language,domain,summary,body,tags,source_url,code,status,version,submitted_at,published_at,created_at,updated_at' as const;
@@ -151,6 +152,7 @@ export function SupabaseReviewQueue({profile}:Props){
         <RefreshCw size={14}/> Refresh
       </button>
     </header>
+    <SupabaseContributionReports/>
     {notice&&<p role="status" className="status-message">{notice}</p>}
     {error&&<p role="alert" className="status-message error-message">{error}</p>}
     {queue.length===0?<div className="gs-empty-state">

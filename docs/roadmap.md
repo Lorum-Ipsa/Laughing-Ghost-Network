@@ -11,13 +11,13 @@
 
 ## 3. Contributions
 
-The draft includes private drafts, direct publication, targeted review, version history, owner deletion and Supabase-backed Research and Arsenal listings. Deletion removes work from the workspace, review queue and public Supabase surfaces and retains internal audit history. The pending publication SQL and version guard require development rollout and two-account browser acceptance. Published content is locked for edits. Author revision of a published article, post-publication reporting and takedown, translations, and attachment handling are separate work.
+The draft includes private drafts, direct publication, targeted review, version history, owner deletion and Supabase-backed Research and Arsenal listings. Deletion removes work from the workspace, review queue and public Supabase surfaces and retains internal audit history. The pending publication SQL and version guard require development rollout and two-account browser acceptance. Published edits reuse the existing screen and public URL. Supabase reports and moderator takedown replace the PocketBase report write path. Translations, attachment handling, and browser acceptance remain in Contributions before Projects.
 
 Historical PocketBase content has not been imported. Research and Arsenal read Supabase, so any historical listing entries need a verified data import to appear there. The homepage, sitemap, legacy public profile and article paths, and other public libraries still have legacy readers.
 
 ## 4. Supabase cutover and remaining Ghost Space sections
 
-**Projects is next.** Migrate project records, ownership, membership, tasks, updates and participation to Supabase with role-based access. Cut over the dashboard and public Projects surfaces together. Then migrate Table Talks, collaboration, notifications, account settings and export, and the remaining admin and moderation workflows. Audit server loaders and browser clients for residual PocketBase access before removing the PocketBase preview service and dependency. Reconcile authorized historical records and URL mappings before retiring legacy readers.
+**Projects follows Contributions.** Migrate project records, ownership, membership, tasks, updates and participation to Supabase with role-based access. Cut over the dashboard and public Projects surfaces together. Then migrate Table Talks, collaboration, notifications, account settings and export, and the remaining admin and moderation workflows. Audit server loaders and browser clients for residual PocketBase access before removing the PocketBase preview service and dependency. Reconcile authorized historical records and URL mappings before retiring legacy readers.
 
 ## 5. Staging, operational security and continuity
 Resolve Supabase CLI migration baseline; add disposable end-to-end tests, hardened cookie/PKCE SSR sessions, reliable deployed staging and rollback, two-user permissions, rate limits, privacy notices and observed moderation behavior.

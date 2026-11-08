@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router';
 import type { Route } from './+types/work-detail';
 import { seo } from '@/lib/seo';
 import { getWork, getTranslations, getRelatedWork, getRelatedByDomain, getContributorCount } from '@/lib/network.server';
@@ -8,9 +9,11 @@ import { WorkHeading } from '@/components/work/work-heading';
 import { TranslateBar } from '@/components/work/translate-bar';
 import type { Translation, Work } from '@/lib/network';
 
+const isSupabaseId = (id:string) => /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(id);
+
 export async function loader({ params }: Route.LoaderArgs) {
   // Supabase IDs must never fall through to PocketBase, including after deletion.
-  if (/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(params.id)) {
+  if (isSupabaseId(params.id)) {
     const work=await publicSupabaseContribution(params.id);
     if(!work)throw new Response('Contribution not found', {status:404});
     return {work,translations:[],related:[],networkRelated:[],contributorCount:0};
@@ -50,6 +53,7 @@ export default function WorkDetail({ loaderData }: Route.ComponentProps) {
       <WorkHeading work={displayWork} />
       <TranslateBar work={work} translations={translations} active={activeTranslation} onSelect={setActiveTranslation} />
       <Article work={displayWork} translation={activeTranslation} related={related} networkRelated={networkRelated} contributorCount={contributorCount} />
+      {isSupabaseId(work.id)&&<div className="rail"><Link to={`/code?report=${work.id}#report`} className="text-link">Report this contribution</Link></div>}
     </main>
   );
 }
