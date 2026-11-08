@@ -184,7 +184,11 @@ export function SupabaseTableTalks({profileId}:{profileId:string}) {
           </form>)}
         </section>}
         {owner?<form onSubmit={event=>submit(event,form=>{
-          const payload=Object.fromEntries(fields.map(field=>[field,value(form,field)]));
+          const payload={
+            objectives:value(form,'objectives'),scenario:value(form,'scenario'),
+            timeline:value(form,'timeline'),injects:value(form,'injects'),
+            evidence:value(form,'evidence'),decision_points:value(form,'decision_points'),
+          };
           const table=supabaseBrowser().from('ghost_table_talk_materials');
           return materials?table.update(payload).eq('talk_id',selected.id).select('talk_id').single()
             :table.insert({talk_id:selected.id,...payload});
