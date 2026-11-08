@@ -209,7 +209,7 @@ export function TableTalksLibrary({ work }: { work: Work[] }) {
         )}
       </div>
       <p className="results-note">{results.length} EXERCISE{results.length !== 1 ? 'S' : ''} · CHRONOLOGICAL ORDER, NO RANKING</p>
-      <div className="exercise-grid">
+      <div className="lgn-library-grid">
         {results.map((item, i) => <ExerciseCard key={item.id} work={item} index={i + 1} />)}
       </div>
       {!results.length && (

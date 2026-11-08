@@ -1,7 +1,6 @@
-import { Link } from 'react-router';
-import { ArrowUpRight, FlaskConical, ShieldCheck } from 'lucide-react';
+import { WorkCard } from '@/components/work-card';
+import { FlaskConical, ShieldCheck } from 'lucide-react';
 import { showcaseWork } from '@/data/library-showcases';
-import { kindLabels, tagsOf } from '@/lib/network';
 
 export function LibraryShowcase({library}:{library:'research'|'arsenal'}){
   const research=library==='research';
@@ -16,13 +15,6 @@ export function LibraryShowcase({library}:{library:'research'|'arsenal'}){
         <p>{research?'Explore examples of a research method and an investigation writeup.':'Inspect a sample detection and a lab utility before browsing member artifacts.'}</p>
       </div>
     </div>
-    <ul className="lgn-showcase-grid">{examples.map(item=><li key={item.id}>
-      <Link className="lgn-showcase-card" to={`/work/${item.id}`}>
-        <span className="eyebrow">{kindLabels[item.kind]}</span>
-        <h3>{item.title} <ArrowUpRight size={17} aria-hidden="true"/></h3>
-        <p>{item.summary}</p>
-        <div className="tags">{tagsOf(item.tags).map(tag=><span key={tag}>{tag}</span>)}</div>
-      </Link>
-    </li>)}</ul>
+    <div className="lgn-library-grid">{examples.map(item=><WorkCard key={item.id} work={item} panel />)}</div>
   </section>;
 }

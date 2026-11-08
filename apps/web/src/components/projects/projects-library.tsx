@@ -256,7 +256,7 @@ export function ProjectsLibrary({ work, contributorCounts }: { work: Work[]; con
         )}
       </div>
       <p className="results-note">{results.length} {noun}{results.length !== 1 ? 'S' : ''} · CHRONOLOGICAL ORDER, NO RANKING</p>
-      <div className="project-grid">
+      <div className="lgn-library-grid">
         {results.map((item) => <ProjectCard key={item.id} work={item} contributors={contributorCounts[item.id] || 0} />)}
       </div>
       {!results.length && (

@@ -194,8 +194,8 @@ export function ArsenalLibrary({ work, allWork }: { work: Work[]; allWork: Work[
         )}
       </div>
       <p className="results-note">{results.length} ARTIFACT{results.length !== 1 ? 'S' : ''} · CHRONOLOGICAL ORDER, NO RANKING</p>
-      <div className="work-grid">
-        {results.map((item) => <WorkCard key={item.id} work={item} meta={metaFor(item)} />)}
+      <div className="lgn-library-grid">
+        {results.map((item) => <WorkCard key={item.id} work={item} meta={metaFor(item)} panel />)}
       </div>
       {!results.length && (
         <div className="empty-state">
