@@ -93,6 +93,53 @@ begin
 end $qa$;
 insert into qa_bot_out select 'cleared sample may be human published',count(*)=1
 from public.ghost_contributions where title='Sensitive sample' and status='published';
+-- Verify clearance does not survive revision and resubmission.
+select public.review_ghost_contribution(
+  (select id from public.ghost_contributions where title='Synthetic key'),
+  1, 'triage_cleared', 'Verified synthetic marker');
+select public.review_ghost_contribution(
+  (select id from public.ghost_contributions where title='Synthetic key'),
+  1, 'revision_requested', 'Add context for the synthetic marker');
+select set_config('request.jwt.claim.sub',(select id::text from qa_bot_users where k='a'),true);
+update public.ghost_contributions set summary='Revised synthetic test', status='submitted'
+  where title='Synthetic key';
+select set_config('request.jwt.claim.sub',(select id::text from qa_bot_users where k='r'),true);
+insert into qa_bot_out
+select 'resubmission gets a fresh pending flag while the prior clearance stays recorded',
+  count(*) filter (where t.version=1 and t.resolution='cleared')=1
+  and count(*) filter (where t.version=c.version and t.version>1
+    and t.recommendation='investigate' and t.resolution='pending')=1
+from public.ghost_contribution_triage t
+join public.ghost_contributions c on c.id=t.contribution_id
+where c.title='Synthetic key';
+do $qa$
+declare
+  work_id uuid;
+  current_version integer;
+  expected_version integer;
+  test_name text;
+begin
+  select id, version into strict work_id, current_version
+  from public.ghost_contributions where title='Synthetic key';
+  begin
+    perform public.review_ghost_contribution(work_id, current_version, 'published', '');
+    insert into qa_bot_out values ('earlier clearance cannot authorize a resubmission', false);
+  exception when insufficient_privilege then
+    insert into qa_bot_out values ('earlier clearance cannot authorize a resubmission', true);
+  end;
+  foreach expected_version in array array[1, null::integer] loop
+    test_name := case when expected_version is null then 'null version cannot clear an automated flag'
+      else 'stale version cannot clear a resubmission' end;
+    begin
+      perform public.review_ghost_contribution(work_id, expected_version, 'triage_cleared', 'Invalid clearance');
+      -- Roll back an unexpected successful clearance before the next attempt.
+      raise sqlstate 'LGN01';
+    exception
+      when serialization_failure then insert into qa_bot_out values (test_name, true);
+      when sqlstate 'LGN01' then insert into qa_bot_out values (test_name, false);
+    end;
+  end loop;
+end $qa$;
 reset role;
 do $qa$ declare failed text;
 begin select string_agg(test,'; ') into failed from qa_bot_out where not passed;

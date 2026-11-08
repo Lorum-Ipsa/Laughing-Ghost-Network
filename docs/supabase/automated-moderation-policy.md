@@ -18,7 +18,7 @@ An investigation takes precedence over a proposed rejection; a proposed rejectio
 - **Bots do not publish, reject, ban or suspend.** They propose actions only; technical or controversial terminology is not itself grounds for rejection.
 - Verified, active humans in private `reviewer`, `moderator`, or `admin` roles can request revision, reject with a reason, or approve.
 - A flagged version cannot be published before an authorized human logs an investigation clearance and reason. Clearance alone **does not** publish.
-- A reviewer cannot decide their own contribution. Review operations require the correct, current version to prevent acting on superseded material.
+- A reviewer cannot decide their own contribution. Review operations require the correct, current version to prevent acting on superseded material. The [pending version guard](review-version-guard.sql) closes a bypass where an explicit null could skip this check.
 - Every human decision and clearance is recorded in `ghost_contribution_reviews`; author-visible review feedback is kept private from other members.
 
 ## Security and limitations
@@ -31,13 +31,15 @@ The narrowly privileged `review_ghost_contribution` RPC is intentionally accessi
 
 ## Verification
 
-- [13 bot screening/security checks](rules-bot-triage-acceptance.sql)
+- [17 bot screening/security checks](rules-bot-triage-acceptance.sql)
 - [18 reviewer workflow checks](reviewer-workflow-rls-acceptance.sql)
 - [14 author contribution privacy checks](contributions-rls-acceptance.sql)
 - [9 handle reservation checks](handle-validation-rls-acceptance.sql)
 - [5 URL and slash-validation tests](../../apps/web/tests/ghost-handle.test.ts)
 
 All database tests create synthetic accounts inside a `BEGIN`/`ROLLBACK` transaction. No reviewer roles are automatically granted to real members.
+
+The version guard was verified against `lgn-development` inside rollback-only transactions. It has not been applied as a remote migration. To repeat the verification before rollout, insert the guard SQL immediately after `begin;` in a temporary copy of the bot acceptance script and run that copy in the development SQL editor. For browser acceptance after rollout, clear a flagged submission, request a revision, and have the author resubmit with the same synthetic trigger. The new version should require a separate clearance before publication.
 
 ## Next scope, not yet implemented
 
