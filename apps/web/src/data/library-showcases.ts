@@ -5,6 +5,8 @@ import type { GhostProfile, Work } from '@/lib/network';
 const samples:(Pick<Work,'id'|'kind'|'title'|'summary'|'tags'|'body'> & Partial<Work>)[] = [
   {
     "id": "showcase-cloud-trust-paths",
+    "domain": "Cloud IAM Analysis",
+    "review_status": "peer_reviewed",
     "kind": "research",
     "title": "Cloud identities: the forgotten trust paths",
     "summary": "Map trust relationships and spot permissions that exceed operational need.",
@@ -13,6 +15,8 @@ const samples:(Pick<Work,'id'|'kind'|'title'|'summary'|'tags'|'body'> & Partial<
   },
   {
     "id": "showcase-log-timeline",
+    "domain": "Digital Forensics",
+    "review_status": "peer_reviewed",
     "kind": "writeup",
     "title": "Reconstructing a timeline from logs",
     "summary": "A reproducible DFIR writeup: time normalization, correlation, and explicit uncertainties.",
@@ -21,6 +25,8 @@ const samples:(Pick<Work,'id'|'kind'|'title'|'summary'|'tags'|'body'> & Partial<
   },
   {
     "id": "showcase-lsass-detection",
+    "domain": "Threat Hunting",
+    "validation_status": "tested",
     "kind": "detection",
     "title": "Detecting suspicious access to LSASS",
     "summary": "A documented Sigma rule, its limitations, and a validation protocol on an isolated environment.",
@@ -29,6 +35,8 @@ const samples:(Pick<Work,'id'|'kind'|'title'|'summary'|'tags'|'body'> & Partial<
   },
   {
     "id": "showcase-log-lens",
+    "domain": "Log Analysis",
+    "validation_status": "community_validated",
     "kind": "tool",
     "title": "Log Lens — normalize before investigating",
     "summary": "A lab utility to inspect JSON events and ease an initial triage.",
