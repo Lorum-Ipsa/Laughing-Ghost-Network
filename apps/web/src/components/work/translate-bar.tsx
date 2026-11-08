@@ -28,6 +28,7 @@ export function TranslateBar({
 }) {
 	const { t, lang } = useI18n();
 	const [target,setTarget]=useState('');
+	const [lastTranslation,setLastTranslation]=useState<Translation|null>(null);
 	const [preferred,setPreferred]=useState('');
 	useEffect(()=>{
 		let active=true;
@@ -50,24 +51,31 @@ export function TranslateBar({
 	const [sourceOverride,setSourceOverride]=useState('');
 	const source=work.language==='other'?sourceOverride:work.language||'en';
 	const languages=CONTENT_LANGUAGES.filter(item=>item.code!==source&&item.code!=='other');
-	const selected=target||languages.find(item=>item.code===(preferred||lang))?.code||languages[0]?.code||'';
+	const selected=[target,preferred,lang].find(code=>languages.some(item=>item.code===code))??'';
 
 	async function translateArticle(){
 		if(busy||!selected)return;
 		setBusy(true);setError('');
 		try{
 			const saved=translations.find(item=>item.language===selected);
-			if(saved){onSelect(saved);setOpen(false);return;}
+			if(saved){setLastTranslation(saved);onSelect(saved);setOpen(false);return;}
+			if(lastTranslation?.language===selected){onSelect(lastTranslation);setOpen(false);return;}
 			if(!source)throw new Error('Choose the original language before translating.');
 			const result=await withTranslator(source,selected,async translate=>({
 				title:await translateProse(work.title,translate),summary:await translateProse(work.summary,translate),
 				body:await translateProse(work.body,translate),
 			}));
-			onSelect({id:`machine:${work.id}:${selected}`,work:work.id,language:selected,source:'machine',
-				created:work.created,updated:work.updated,...result});
+			const translation:Translation={id:`machine:${work.id}:${selected}`,work:work.id,language:selected,source:'machine',
+				created:work.created,updated:work.updated,...result};
+			setLastTranslation(translation);onSelect(translation);
 			setOpen(false);
 		}catch(e){setError(e instanceof Error?e.message:'Could not translate this article.');}
 		finally{setBusy(false);}
+	}
+	function showTranslation(){
+		setError('');
+		if(!selected||(!source&&!translations.some(item=>item.language===selected))){setOpen(true);return;}
+		void translateArticle();
 	}
 	const [open, setOpen] = useState(false);
 	const ref = useRef<HTMLDivElement>(null);
@@ -103,23 +111,20 @@ export function TranslateBar({
 						{active.source === 'human' ? 'Human translation' : t('lang.translated')} · {contentLanguageLabel(active.language)}
 					</span>
 				)}
-				{active ? (
-					<button type="button" className="translate-action" onClick={() => onSelect(null)}>
+				{active?(
+					<button type="button" className="translate-action" onClick={()=>{onSelect(null);setOpen(false);setError('');}}>
 						{t('lang.showOriginal')}
 					</button>
-				) : (
-					<button
-						type="button"
-						className="translate-action"
-						onClick={() => {setError('');setOpen(v => !v);}}
-						aria-haspopup="listbox"
-						aria-expanded={open}
-					>
+				):(
+					<button type="button" className="translate-action" disabled={busy} onClick={showTranslation}>
 						<Languages size={14} strokeWidth={1.5} />
-						{t('lang.translate')}
-						<ChevronDown size={13} className={`lang-chevron ${open ? 'open' : ''}`} strokeWidth={1.5} />
+						{busy?'Translating…':t('lang.showTranslation')}
 					</button>
 				)}
+				<button type="button" className="translate-action" aria-expanded={open} disabled={busy}
+					onClick={()=>{setError('');setOpen(value=>!value);}}>
+					Translation language <ChevronDown size={13} className={`lang-chevron ${open?'open':''}`} />
+				</button>
 				{open&&<div className="form-panel">
 					{work.language==='other'&&<><label htmlFor="article-source-language">Original language</label>
 					<select id="article-source-language" value={sourceOverride} disabled={busy}
@@ -129,11 +134,11 @@ export function TranslateBar({
 					</select></>}
 					<label htmlFor="article-translation-language">Read this article in</label>
 					<select id="article-translation-language" value={selected} disabled={busy} onChange={event=>setTarget(event.target.value)}>
+						<option value="">Choose a language</option>
 						{languages.map(item=><option key={item.code} value={item.code}>{item.native}</option>)}
 					</select>
 					<button type="button" className="button button-outline" disabled={busy||!selected}
-						onClick={()=>void translateArticle()}>{busy?'Translating…':'Translate article'}</button>
-					{error&&<p role="alert">{error}</p>}
+						onClick={()=>void translateArticle()}>{busy?'Translating…':t('lang.showTranslation')}</button>
 				</div>}
 				{open && translations.length>0 && (
 					<ul className="lang-menu translate-menu" role="listbox">
@@ -145,7 +150,7 @@ export function TranslateBar({
 									aria-selected={active?.id === tr.id}
 									className={`lang-option ${active?.id === tr.id ? 'active' : ''}`}
 									onClick={() => {
-										onSelect(tr);
+										setTarget(tr.language);setLastTranslation(tr);onSelect(tr);
 										setOpen(false);
 									}}
 								>
@@ -161,6 +166,7 @@ export function TranslateBar({
 				)}
 			</div>
 
+			{error&&<p role="alert">{error}</p>}
 			{active && <p className="translate-notice">{t('lang.translateNotice')}</p>}
 		</div>
 	);
