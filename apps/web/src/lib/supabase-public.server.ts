@@ -171,5 +171,9 @@ export async function publicSupabaseProjects() {
     .order('created_at',{ascending:false}).limit(100);
   if(error?.code==='PGRST205')return [];
   if(error)throw error;
-  return data;
+  if(!data.length)return [];
+  const {data:roles,error:roleError}=await api.from('ghost_project_roles')
+    .select('id,project_id,title').in('project_id',data.map(project=>project.id)).order('title');
+  if(roleError&&roleError.code!=='PGRST205')throw roleError;
+  return data.map(project=>({...project,roles:(roles??[]).filter(role=>role.project_id===project.id)}));
 }

@@ -459,23 +459,113 @@ export type Database = {
           referencedColumns: ["id"]
         }]
       }
+      ghost_project_roles: {
+        Row: {
+          id: string
+          project_id: string
+          title: string
+          description: string
+          is_open: boolean
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          title: string
+          description?: string
+          is_open?: boolean
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          title?: string
+          description?: string
+          is_open?: boolean
+        }
+        Relationships: [{
+          foreignKeyName: "ghost_project_roles_project_id_fkey"
+          columns: ["project_id"]
+          isOneToOne: false
+          referencedRelation: "ghost_projects"
+          referencedColumns: ["id"]
+        }]
+      }
+      ghost_project_milestones: {
+        Row: {
+          id: string
+          project_id: string
+          title: string
+          due_on: string | null
+          completed: boolean
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          title: string
+          due_on?: string | null
+          completed?: boolean
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          title?: string
+          due_on?: string | null
+          completed?: boolean
+        }
+        Relationships: [{
+          foreignKeyName: "ghost_project_milestones_project_id_fkey"
+          columns: ["project_id"]
+          isOneToOne: false
+          referencedRelation: "ghost_projects"
+          referencedColumns: ["id"]
+        }]
+      }
+      ghost_project_watches: {
+        Row: {
+          project_id: string
+          profile_id: string
+        }
+        Insert: {
+          project_id: string
+          profile_id: string
+        }
+        Update: {
+          project_id?: string
+          profile_id?: string
+        }
+        Relationships: [{
+          foreignKeyName: "ghost_project_watches_project_id_fkey"
+          columns: ["project_id"]
+          isOneToOne: false
+          referencedRelation: "ghost_projects"
+          referencedColumns: ["id"]
+        }, {
+          foreignKeyName: "ghost_project_watches_profile_id_fkey"
+          columns: ["profile_id"]
+          isOneToOne: false
+          referencedRelation: "ghost_profiles"
+          referencedColumns: ["id"]
+        }]
+      }
       ghost_project_members: {
         Row: {
           project_id: string
           profile_id: string
           status: string
+          role_id: string | null
           created_at: string
         }
         Insert: {
           project_id: string
           profile_id: string
           status?: string
+          role_id?: string | null
           created_at?: string
         }
         Update: {
           project_id?: string
           profile_id?: string
           status?: string
+          role_id?: string | null
           created_at?: string
         }
         Relationships: [{
@@ -490,6 +580,12 @@ export type Database = {
           isOneToOne: false
           referencedRelation: "ghost_profiles"
           referencedColumns: ["id"]
+        }, {
+          foreignKeyName: "ghost_project_members_role_fkey"
+          columns: ["project_id", "role_id"]
+          isOneToOne: false
+          referencedRelation: "ghost_project_roles"
+          referencedColumns: ["project_id", "id"]
         }]
       }
       ghost_project_tasks: {

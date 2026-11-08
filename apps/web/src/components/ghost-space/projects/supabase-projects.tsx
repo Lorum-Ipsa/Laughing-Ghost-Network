@@ -8,6 +8,8 @@ import type { Database } from '@/lib/supabase.database.types';
 type Project = Database['public']['Tables']['ghost_projects']['Row'];
 type Member = Database['public']['Tables']['ghost_project_members']['Row'];
 type Update = Database['public']['Tables']['ghost_project_updates']['Row'];
+type Role = Database['public']['Tables']['ghost_project_roles']['Row'];
+type Milestone = Database['public']['Tables']['ghost_project_milestones']['Row'];
 type Task = Database['public']['Tables']['ghost_project_tasks']['Row'];
 const projectFields='id,profile_id,title,summary,visibility,status,recruiting,created_at' as const;
 const taskStates=['open','in_progress','complete'];
@@ -20,6 +22,10 @@ export function SupabaseProjects({profileId}:{profileId:string}) {
   const [members,setMembers]=useState<Member[]>([]);
   const [tasks,setTasks]=useState<Task[]>([]);
   const [updates,setUpdates]=useState<Update[]>([]);
+  const [roles,setRoles]=useState<Role[]>([]);
+  const [milestones,setMilestones]=useState<Milestone[]>([]);
+  const [watching,setWatching]=useState<string[]>([]);
+  const [requestRole,setRequestRole]=useState('');
   const [handles,setHandles]=useState<Record<string,string>>({});
   const [loading,setLoading]=useState(true);
   const [busy,setBusy]=useState(false);
@@ -31,14 +37,18 @@ export function SupabaseProjects({profileId}:{profileId:string}) {
 
   useEffect(()=>{
     let active=true;
-    setLoading(true);setError('');
+    setLoading(true);setError('');setRequestRole('');
     void (async()=>{
       try {
         const api=supabaseBrowser();
-        const {data:mine,error:membersError}=await api.from('ghost_project_members')
-          .select('project_id').eq('profile_id',profileId);
-        if(membersError)throw membersError;
-        const ids=mine.map(row=>row.project_id);
+        const [mine,watches]=await Promise.all([
+          api.from('ghost_project_members').select('project_id').eq('profile_id',profileId),
+          api.from('ghost_project_watches').select('project_id').eq('profile_id',profileId),
+        ]);
+        if(mine.error)throw mine.error;
+        if(watches.error)throw watches.error;
+        const watchedIds=watches.data.map(row=>row.project_id);
+        const ids=[...new Set([...mine.data.map(row=>row.project_id),...watchedIds])];
         if(selectedId&&/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(selectedId))ids.push(selectedId);
         const query=api.from('ghost_projects').select(projectFields);
         const {data,error}=await (ids.length
@@ -49,16 +59,24 @@ export function SupabaseProjects({profileId}:{profileId:string}) {
         const memberRows:Member[]=[];
         const taskRows:Task[]=[];
         const updateRows:Update[]=[];
+        const roleRows:Role[]=[];
+        const milestoneRows:Milestone[]=[];
         const names:Record<string,string>={};
         if(current){
-          const [memberResult,taskResult,updateResult]=await Promise.all([
+          const [memberResult,taskResult,updateResult,roleResult,milestoneResult]=await Promise.all([
             api.from('ghost_project_members').select('*').eq('project_id',current.id),
             api.from('ghost_project_tasks').select('*').eq('project_id',current.id).order('created_at'),
             api.from('ghost_project_updates').select('*').eq('project_id',current.id).order('created_at',{ascending:false}),
+            api.from('ghost_project_roles').select('*').eq('project_id',current.id).order('title'),
+            api.from('ghost_project_milestones').select('*').eq('project_id',current.id).order('due_on').order('title'),
           ]);
           if(memberResult.error)throw memberResult.error;
           if(taskResult.error)throw taskResult.error;
           if(updateResult.error)throw updateResult.error;
+          if(roleResult.error)throw roleResult.error;
+          if(milestoneResult.error)throw milestoneResult.error;
+          roleRows.push(...roleResult.data);
+          milestoneRows.push(...milestoneResult.data);
           updateRows.push(...updateResult.data);
           memberRows.push(...memberResult.data);
           taskRows.push(...taskResult.data);
@@ -69,10 +87,10 @@ export function SupabaseProjects({profileId}:{profileId:string}) {
             for(const row of profiles)names[row.id]=row.handle;
           }
         }
-        if(active){setProjects(data);setProject(current);setMembers(memberRows);setTasks(taskRows);setUpdates(updateRows);setHandles(names);}
+        if(active){setProjects(data);setProject(current);setMembers(memberRows);setTasks(taskRows);setUpdates(updateRows);setRoles(roleRows);setMilestones(milestoneRows);setWatching(watchedIds);setHandles(names);}
       } catch(e) {
         if(active){
-          setProjects([]);setProject(null);setMembers([]);setTasks([]);setUpdates([]);
+          setProjects([]);setProject(null);setMembers([]);setTasks([]);setUpdates([]);setRoles([]);setMilestones([]);setWatching([]);
           setError(typeof e==='object'&&e!==null&&'code' in e&&e.code==='PGRST205'
             ?'The Projects migration has not been applied in this environment.'
             : 'Unable to load Projects. Refresh and try again.');
@@ -157,6 +175,42 @@ export function SupabaseProjects({profileId}:{profileId:string}) {
     }
   }
 
+  function invite(event:FormEvent<HTMLFormElement>,projectId:string) {
+    event.preventDefault();
+    const element=event.currentTarget;
+    const handle=String(new FormData(element).get('handle')??'').trim();
+    void mutate(async()=>{
+      const api=supabaseBrowser();
+      const {data,error}=await api.from('ghost_profiles').select('id').eq('handle',handle).maybeSingle();
+      if(error)throw error;
+      if(!data)throw new Error('No Ghost matches that exact handle.');
+      const result=await api.from('ghost_project_members').insert({
+        project_id:projectId,profile_id:data.id,status:'invited',
+      });
+      if(!result.error)element.reset();
+      return result;
+    },'Invitation added to the Ghost’s Projects workspace.');
+  }
+
+  function addPlanningItem(event:FormEvent<HTMLFormElement>,projectId:string,kind:'role'|'milestone') {
+    event.preventDefault();
+    const element=event.currentTarget;
+    const form=new FormData(element);
+    const title=String(form.get('title')??'').trim();
+    void mutate(async()=>{
+      const api=supabaseBrowser();
+      const result=kind==='role'
+        ?await api.from('ghost_project_roles').insert({
+          project_id:projectId,title,description:String(form.get('description')??'').trim(),
+        })
+        :await api.from('ghost_project_milestones').insert({
+          project_id:projectId,title,due_on:String(form.get('due_on')??'')||null,
+        });
+      if(!result.error)element.reset();
+      return result;
+    },kind==='role'?'Role posted.':'Milestone added.');
+  }
+
   return <section className="gs-contributions">
     <h1>Projects</h1>
     <p>Start a private project, publish its brief when ready, and collaborate through a private task board.</p>
@@ -174,13 +228,21 @@ export function SupabaseProjects({profileId}:{profileId:string}) {
       </form>
       <ul className="gs-card-list">{projects.map(row=><li key={row.id}>
         <button type="button" className="button button-outline" onClick={()=>select(row.id)}>
-          {row.title} · {row.profile_id===profileId?'Maintaining':'Participation'} · {row.status}
+          {row.title} · {row.profile_id===profileId?'Maintaining':watching.includes(row.id)?'Watching':'Participation'} · {row.status}
         </button>
       </li>)}</ul>
       {selectedId&&!project&&<p>The selected project is unavailable.</p>}
       {project&&<div className="dashboard-panel" key={project.id}>
         <h2>{project.title}</h2>
         <p style={{whiteSpace:'pre-wrap'}}>{project.summary}</p>
+        {!owning&&project.visibility==='public'&&project.status!=='archived'&&
+          <button type="button" className="button button-outline" disabled={busy}
+            onClick={()=>{const watched=watching.includes(project.id);
+              void mutate(()=>watched
+                ?supabaseBrowser().from('ghost_project_watches').delete().eq('project_id',project.id).eq('profile_id',profileId)
+                :supabaseBrowser().from('ghost_project_watches').insert({project_id:project.id,profile_id:profileId}),
+                watched?'Project removed from your watch list.':'Project added to your watch list.');
+            }}>{watching.includes(project.id)?'Stop watching':'Watch project'}</button>}
         {owning?<form key={JSON.stringify(project)} onSubmit={event=>saveProject(event,project)}>
           <h3>Project settings</h3>
           <label htmlFor="project-title">Title</label><input id="project-title" name="title" defaultValue={project.title} maxLength={180} required/>
@@ -195,27 +257,71 @@ export function SupabaseProjects({profileId}:{profileId:string}) {
           <button className="button button-light" disabled={busy}>Save project settings</button>
         </form>:myMembership?<div>
           <p>Membership: {myMembership.status}</p>
+          {myMembership.status==='invited'&&project.status==='active'&&
+            <button type="button" className="button button-light" disabled={busy}
+              onClick={()=>void mutate(()=>supabaseBrowser().from('ghost_project_members').update({status:'accepted'})
+                .eq('project_id',project.id).eq('profile_id',profileId).eq('status','invited')
+                .select('project_id').single(),'Invitation accepted.')}>Accept invitation</button>}
           <button type="button" className="button button-outline" disabled={busy}
             onClick={()=>void mutate(()=>supabaseBrowser().from('ghost_project_members').delete().eq('project_id',project.id).eq('profile_id',profileId),'Membership removed.')}>
-            {myMembership.status==='accepted'?'Leave project':'Remove request'}
+            {myMembership.status==='accepted'?'Leave project':myMembership.status==='invited'?'Decline invitation':'Remove request'}
           </button>
-        </div>:project.recruiting&&project.visibility==='public'&&project.status==='active'&&
+        </div>:project.recruiting&&project.visibility==='public'&&project.status==='active'&&<div>
+          {roles.length>0&&<><label htmlFor="project-request-role">Role</label>
+            <select id="project-request-role" value={requestRole} onChange={event=>setRequestRole(event.target.value)}>
+              <option value="">General membership</option>
+              {roles.map(role=><option key={role.id} value={role.id}>{role.title}</option>)}
+            </select></>}
           <button type="button" className="button button-light" disabled={busy}
-            onClick={()=>void mutate(()=>supabaseBrowser().from('ghost_project_members').insert({project_id:project.id,profile_id:profileId}),'Membership requested.')}>
+            onClick={()=>void mutate(()=>supabaseBrowser().from('ghost_project_members').insert({project_id:project.id,profile_id:profileId,role_id:requestRole||null}),'Membership requested.')}>
             Request to join
-          </button>}
+          </button></div>}
         {owning&&<div><h3>Membership</h3>
+          {project.visibility==='public'&&project.status==='active'&&<form onSubmit={event=>invite(event,project.id)}>
+            <label htmlFor="project-invite-handle">Invite a Ghost by exact handle</label>
+            <input id="project-invite-handle" name="handle" maxLength={40} required/>
+            <button className="button button-light" disabled={busy}>Invite Ghost</button>
+          </form>}
           {members.length===0&&<p>No members or requests yet.</p>}
           <ul>{members.map(member=><li key={member.profile_id}>
-            {handles[member.profile_id]?<Link to={ghostProfilePath(handles[member.profile_id])}>{handles[member.profile_id]}</Link>:'Ghost'} · {member.status}{' '}
+            {handles[member.profile_id]?<Link to={ghostProfilePath(handles[member.profile_id])}>{handles[member.profile_id]}</Link>:'Ghost'} · {member.status}{member.role_id&&` · ${roles.find(role=>role.id===member.role_id)?.title??'Role'}`}{' '}
             {member.status==='requested'&&['accepted','declined'].map(status=><button key={status} type="button" disabled={busy}
               onClick={()=>void mutate(()=>supabaseBrowser().from('ghost_project_members').update({status})
                 .eq('project_id',project.id).eq('profile_id',member.profile_id).eq('status','requested').select('project_id').single(),'Request decided.')}>
               {status==='accepted'?'Accept':'Decline'}
             </button>)}
-            {member.status==='accepted'&&<button type="button" disabled={busy}
+            {(member.status==='accepted'||member.status==='invited')&&<button type="button" disabled={busy}
               onClick={()=>void mutate(()=>supabaseBrowser().from('ghost_project_members').delete()
-                .eq('project_id',project.id).eq('profile_id',member.profile_id),'Member removed.')}>Remove</button>}
+                .eq('project_id',project.id).eq('profile_id',member.profile_id),'Membership record removed.')}>{member.status==='invited'?'Cancel invitation':'Remove'}</button>}
+          </li>)}</ul>
+        </div>}
+        {(owning||roles.length>0)&&<div><h3>Project roles</h3>
+          {owning&&<form onSubmit={event=>addPlanningItem(event,project.id,'role')}>
+            <label htmlFor="project-role-title">Role title</label><input id="project-role-title" name="title" maxLength={100} required/>
+            <label htmlFor="project-role-description">Role description</label><textarea id="project-role-description" name="description" maxLength={2000}/>
+            <button className="button button-light" disabled={busy}>Post role</button>
+          </form>}
+          <ul>{roles.map(role=><li key={role.id}><strong>{role.title}</strong><p>{role.description}</p>
+            {owning&&<button type="button" disabled={busy} onClick={()=>void mutate(()=>supabaseBrowser()
+              .from('ghost_project_roles').update({is_open:!role.is_open}).eq('id',role.id).select('id').single(),'Role updated.')}>
+              {role.is_open?'Close role':'Reopen role'}
+            </button>}
+          </li>)}</ul>
+        </div>}
+        {(owning||myMembership?.status==='accepted')&&<div><h3>Milestones</h3>
+          {owning&&<form onSubmit={event=>addPlanningItem(event,project.id,'milestone')}>
+            <label htmlFor="project-milestone-title">Milestone</label><input id="project-milestone-title" name="title" maxLength={180} required/>
+            <label htmlFor="project-milestone-due">Target date</label><input id="project-milestone-due" name="due_on" type="date"/>
+            <button className="button button-light" disabled={busy}>Add milestone</button>
+          </form>}
+          {milestones.length===0&&<p>No milestones yet.</p>}
+          <ul>{milestones.map(milestone=><li key={milestone.id}>
+            {milestone.title} · {milestone.completed?'Complete':'Open'}{milestone.due_on&&` · ${milestone.due_on}`}{' '}
+            {owning&&<button type="button" disabled={busy} onClick={()=>void mutate(()=>supabaseBrowser()
+              .from('ghost_project_milestones').update({completed:!milestone.completed})
+              .eq('id',milestone.id).select('id').single(),'Milestone updated.')}>
+              {milestone.completed?'Reopen':'Complete'}
+            </button>}
           </li>)}</ul>
         </div>}
         {(owning||myMembership?.status==='accepted')&&<div><h3>Task board</h3>

@@ -43,6 +43,7 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
           <h3>{project.title}</h3>
           <p>{project.summary}</p>
           <p>{project.status==='completed'?'Completed':project.recruiting?'Recruiting':'Active'}</p>
+          {project.roles.length>0&&<p>Open roles · {project.roles.map(role=>role.title).join(', ')}</p>}
           <Link to={`/ghost-space?section=projects&project=${project.id}`}>
             {project.status==='active'&&project.recruiting?'Open project and request to join':'Open project in Ghost Space'}
           </Link>
