@@ -38,6 +38,8 @@ jobs:
       - uses: oven-sh/setup-bun@v2
       - name: Install frozen dependency lockfile
         run: bun install --frozen-lockfile
+      - name: Validate Ghost handle syntax and slash-safe routing
+        run: bun test apps/web/tests/ghost-handle.test.ts
       - name: Build SSR frontend
         run: bun run build
       - name: Typecheck
