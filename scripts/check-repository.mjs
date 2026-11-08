@@ -9,23 +9,10 @@ for (const file of ['README.md', 'CONTRIBUTING.md', 'SECURITY.md', 'AGENTS.md'])
   if (!exists(file)) failures.push('Required governance file missing: ' + file);
 }
 
-for (const file of ['package.json', 'apps/web/package.json', 'apps/pocketbase/package.json']) {
+for (const file of ['package.json', 'apps/web/package.json']) {
   if (!exists(file)) continue;
   try { JSON.parse(fs.readFileSync(path.join(root, file), 'utf8')); }
   catch { failures.push('Invalid JSON: ' + file); }
-}
-
-const unsafeAdminHook = 'apps/pocketbase/pb_hooks/ghost-admin-bootstrap.pb.js';
-if (exists(unsafeAdminHook)) {
-  failures.push('Public first-signup admin bootstrap hook must not be imported: ' + unsafeAdminHook);
-}
-
-const migration = 'apps/pocketbase/pb_migrations/1791370500_admin_rbac_suspension.js';
-if (exists(migration)) {
-  const source = fs.readFileSync(path.join(root, migration), 'utf8');
-  if (/u\.set\(\s*['"]role['"]\s*,\s*['"]admin['"]\s*\)/.test(source)) {
-    failures.push('Unsafe broad account promotion detected in: ' + migration);
-  }
 }
 
 const forbidden = [

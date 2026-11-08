@@ -1,0 +1,6 @@
+import { ghostProfilePath } from '@/lib/ghost-handle';
+import { Link } from 'react-router';
+import { ArrowUpRight } from 'lucide-react';
+import { GhostAvatar } from '@/components/ghost-avatar';
+import type { GhostProfile } from '@/lib/network';
+export function GhostsPreview({ profiles }: { profiles: GhostProfile[] }) { return <section className="ghosts-preview rail section-space"><div className="ghosts-intro"><div className="eyebrow">02 / THE GHOSTS</div><h2>Handles.<br/>Not facades.</h2><p>Laughing Ghost members use persistent identities built around their work. No follower counts. No popularity rankings. No karma. Just people, specialties, and contributions.</p><Link className="text-link" to="/ghosts">Meet the Ghosts <ArrowUpRight size={16}/></Link></div><div className="ghost-preview-list">{profiles.slice(0, 3).map((profile, i) => <Link to={ghostProfilePath(profile.handle, profile.example)} className="ghost-preview-row" key={profile.id}><span className={`ghost-avatar avatar-${i}`}><GhostAvatar profile={profile} size={34}/></span><span><strong>{profile.handle}</strong><span>{profile.specialties}</span></span><ArrowUpRight size={20}/></Link>)}{!profiles.length && <p>No public profiles yet.</p>}<span className="mono ghost-list-note">NO FOLLOWERS. NO RANKINGS. ONLY WORK.</span></div></section>; }

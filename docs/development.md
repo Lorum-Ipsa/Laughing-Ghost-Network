@@ -6,7 +6,7 @@ The repository begins with governance and import tooling. The original Horizons 
 
 ## Starting from the export
 
-Read [the migration plan](migration/horizons-to-github.md). The exported app requires Bun, Node.js, and a suitable PocketBase binary; the app was originally coupled to Horizons preview services. Never connect local testing to production data.
+Use Bun, Node.js, and the Supabase development project. See [local development](development-local.md). Never connect local testing to production data.
 
 After import, the root `package.json` lists `setup`, `dev`, `build`, `lint`, and `typecheck` commands. Verify tool compatibility rather than assuming they work unchanged.
 

@@ -1,0 +1,165 @@
+name: LGN application validation
+on:
+  pull_request:
+    paths:
+      - 'apps/**'
+      - 'package.json'
+      - 'bun.lock'
+      - 'bunfig.toml'
+      - 'scripts/check-app-source.mjs'
+      - '.github/workflows/application-build.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/**'
+      - 'package.json'
+      - 'bun.lock'
+      - 'bunfig.toml'
+      - 'scripts/check-app-source.mjs'
+      - '.github/workflows/application-build.yml'
+permissions:
+  contents: read
+jobs:
+  source-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/check-repository.mjs
+      - run: node scripts/check-app-source.mjs
+  frontend-build:
+    name: Install, build and typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned Bun from npm
+        run: |
+          npm install --prefix "$RUNNER_TEMP/lgn-tools" --no-save bun@1.4.4
+          echo "$RUNNER_TEMP/lgn-tools/node_modules/.bin" >> "$GITHUB_PATH"
+      - name: Install frozen dependency lockfile
+        run: bun install --frozen-lockfile
+      - name: Validate Ghost handle syntax and slash-safe routing
+        run: bun test apps/web/tests/ghost-handle.test.ts
+      - name: Validate browser push worker syntax
+        run: node --check apps/web/public/lgn-push-sw.js
+      - name: Verify direct-message cryptography
+        run: bun test apps/web/tests/dm-crypto.test.ts
+      - name: Verify Research and Arsenal search
+        run: bun test apps/web/tests/work-search.test.ts
+      - name: Verify translation preserves technical content
+        run: bun test apps/web/tests/browser-translation.test.ts
+      - name: Build SSR frontend
+        run: bun run build
+      - name: Typecheck
+        run: bun run typecheck
+      - name: Smoke test public routes and demo content
+        env:
+          HOST: 127.0.0.1
+          PORT: '3100'
+        run: |
+          npm run start --workspace web > "$RUNNER_TEMP/lgn-web-smoke.log" 2>&1 &
+          app_pid=$!
+          trap 'kill "$app_pid" 2>/dev/null || true' EXIT
+          origin=http://127.0.0.1:3100
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent "$origin/api/health" >/dev/null; then break; fi
+            if ! kill -0 "$app_pid" 2>/dev/null; then break; fi
+            sleep 1
+          done
+          if ! curl --fail --silent --show-error "$origin/api/health" >/dev/null; then
+            cat "$RUNNER_TEMP/lgn-web-smoke.log"
+            exit 1
+          fi
+          for route in '' ghosts ghosts/~demo-nullspectre research arsenal code login projects table-talks sitemap.xml llms.txt; do
+            curl --fail --silent --show-error "$origin/$route" --output /dev/null
+          done
+          for route in research arsenal projects table-talks; do
+            html=$(curl --fail --silent --show-error "$origin/$route")
+            if printf '%s' "$html" | grep -E 'href="/ghost-space\?section=(projects|table-talks)|>(Share research|Share an artifact|Propose an artifact|Propose a project|Propose an exercise|Start a project|Draft an exercise)([[:space:]]|<)' >/dev/null; then
+              echo "Member action found on public /$route"
+              exit 1
+            fi
+          done
+          curl --fail --silent --show-error "$origin/lgn-push-sw.js" --output "$RUNNER_TEMP/lgn-push-sw.js"
+          node --check "$RUNNER_TEMP/lgn-push-sw.js"
+          curl --fail --silent --show-error "$origin/research" | grep -F 'href="/work/showcase-cloud-trust-paths"' >/dev/null
+          curl --fail --silent --show-error "$origin/arsenal" | grep -F 'href="/work/showcase-lsass-detection"' >/dev/null
+          curl --fail --silent --show-error "$origin/work/showcase-lsass-detection" | grep -F 'Educational demo artifact.' >/dev/null
+          curl --fail --silent --show-error "$origin/projects" | grep -F 'href="/work/demo-detection-lab"' >/dev/null
+          curl --fail --silent --show-error "$origin/table-talks" | grep -F 'href="/work/demo-cloud-incident"' >/dev/null
+          curl --fail --silent --show-error "$origin/ghosts/~demo-nullspectre" | grep -F 'Fictional demo profile' >/dev/null
+          status=$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
+            "$origin/work/00000000-0000-0000-0000-000000000000")
+          test "$status" = 404
+
+  codespaces-preview-smoke:
+    name: Public-page preview smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Prepare independent development stack
+        run: bash .devcontainer/setup.sh
+      - name: Start app and check browser-facing endpoints
+        run: |
+          # Reproduce the GitHub Codespaces host/port-forwarding environment.
+          export CODESPACES=true
+          export CODESPACE_NAME=lgn-ci-preview
+          bash .devcontainer/start.sh > "$RUNNER_TEMP/lgn-preview.log" 2>&1 &
+          app_pid=$!
+          trap 'kill "$app_pid" 2>/dev/null || true' EXIT
+          ready=false
+          for attempt in $(seq 1 50); do
+            if curl --fail --silent http://127.0.0.1:3000/api/health > "$RUNNER_TEMP/health.json"; then
+              ready=true
+              break
+            fi
+            if ! kill -0 "$app_pid" 2>/dev/null; then
+              echo "LGN preview process stopped."
+              exit 1
+            fi
+            sleep 1
+          done
+          if [ "$ready" != true ]; then
+            echo "LGN preview did not become healthy."
+            exit 1
+          fi
+          cat "$RUNNER_TEMP/health.json"
+          curl --fail --silent http://127.0.0.1:3000/ --output "$RUNNER_TEMP/home.html"
+          grep -qi 'Laughing Ghost' "$RUNNER_TEMP/home.html"
+          # Codespaces proxy forwards with an app.github.dev Host header.
+          curl --fail --silent --show-error \
+            -H 'Host: lgn-ci-preview-3000.app.github.dev' \
+            http://127.0.0.1:3000/ --output "$RUNNER_TEMP/codespaces-home.html"
+          grep -qi 'Laughing Ghost' "$RUNNER_TEMP/codespaces-home.html"
+          # Confirm the searchable directory renders in the Supabase preview.
+          curl --fail --silent --show-error http://127.0.0.1:3000/ghosts \
+            --output "$RUNNER_TEMP/ghost-directory.html"
+          grep -qi 'Search the Network' "$RUNNER_TEMP/ghost-directory.html"
+          # The real visitor auth pages must all respond successfully without
+          # using the optional /supabase-lab experiment.
+          for page in join login verify-email reset-password ghost-space; do
+            echo "Checking /$page"
+            curl --fail --silent --show-error "http://127.0.0.1:3000/$page" \
+              --output "$RUNNER_TEMP/auth-$page.html"
+            test -s "$RUNNER_TEMP/auth-$page.html"
+          done
+          # Client-only auth must never ship an account secret in server HTML.
+          if grep -Eqi 'sb_secret_|service_role' "$RUNNER_TEMP"/auth-*.html; then
+            echo "Unexpected secret marker in auth page HTML"
+            exit 1
+          fi
+          # The experimental Supabase identity page must be unavailable unless
+          # explicitly enabled by an individual developer.
+          status=$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:3000/supabase-lab)
+          test "$status" = '404'
+

@@ -1,0 +1,179 @@
+import { useEffect, useState } from 'react';
+import type { FormEvent } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router';
+import { SupabaseDashboardHome } from '@/components/ghost-space/supabase-dashboard-home';
+import { useSupabaseAuth } from '@/hooks/use-supabase-auth';
+import { supabaseBrowser } from '@/lib/supabase-browser';
+import { SupabaseProfileEditor } from '@/components/ghost-space/profile/supabase-profile-editor';
+import { SupabaseMfaChallenge } from '@/components/ghost-space/settings/supabase-mfa';
+import { SupabaseSettings } from '@/components/ghost-space/settings/supabase-settings';
+import { SupabaseContributions } from '@/components/ghost-space/contributions/supabase-contributions';
+import { SupabaseNotifications } from '@/components/ghost-space/notifications/supabase-notifications';
+import { SupabaseMessages } from '@/components/ghost-space/messages/supabase-messages';
+import { SupabaseNetwork } from '@/components/ghost-space/network/supabase-network';
+import { SupabaseTableTalks } from '@/components/ghost-space/table-talks/supabase-table-talks';
+import { SupabaseProjects } from '@/components/ghost-space/projects/supabase-projects';
+import { SupabaseReviewQueue } from '@/components/ghost-space/review/supabase-review-queue';
+import { ghostProfilePath, validNewGhostHandle } from '@/lib/ghost-handle';
+import {
+  claimGhostProfile, findMyGhostProfile, signupDetails,
+  type GhostIdentity,
+} from '@/lib/supabase-ghost-profile';
+import { GhostSpaceLayout, type GhostSpaceSection } from '@/components/ghost-space/ghost-space-layout';
+
+const sections: GhostSpaceSection[] = [
+  'dashboard', 'profile', 'contributions', 'review', 'projects', 'table-talks',
+  'network', 'messages', 'notifications', 'settings',
+];
+
+export function SupabaseGhostSpaceDashboard() {
+  const { user, isLoading, error: sessionError } = useSupabaseAuth();
+  const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const section = sections.includes(params.get('section') as GhostSpaceSection)
+    ? (params.get('section') as GhostSpaceSection) : 'dashboard';
+
+  const [profile, setProfile] = useState<GhostIdentity | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [claimError, setClaimError] = useState('');
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [newHandle, setNewHandle] = useState('');
+  const [verifiedAccount,setVerifiedAccount]=useState<{userId:string;state:string}|null>(null);
+  const accountState=verifiedAccount?.userId===user?.id?verifiedAccount?.state??'checking':'checking';
+  const [accountRevision,setAccountRevision]=useState(0);
+  const [canReview,setCanReview] = useState(false);
+
+  useEffect(()=>{
+    let active=true;
+    setVerifiedAccount(null);setLoading(true);setProfile(null);
+    const userId=user?.id;
+    if(!userId)return;
+    void (async()=>{
+      try{
+        const {data,error}=await supabaseBrowser().rpc('ghost_account_state');
+        if(error)throw error;
+        if(active)setVerifiedAccount({userId,state:data});
+      }catch{if(active)setVerifiedAccount({userId,state:'unavailable'});}
+    })();
+    return()=>{active=false;};
+  },[user?.id,accountRevision]);
+
+  useEffect(() => {
+    if (accountState!=='active'||!user?.id) { setCanReview(false); return; }
+    let active=true;
+    void Promise.resolve(supabaseBrowser().rpc('can_review_contributions')).then(({data,error}) => {
+      if (active) setCanReview(!error && data===true);
+    }).catch(()=>{if(active)setCanReview(false);});
+    return()=>{active=false;};
+  }, [user?.id,accountState]);
+
+  useEffect(() => {
+    if (accountState!=='active'||!user?.email_confirmed_at) return;
+    let active = true;
+    const initial = signupDetails(user);
+    setNewHandle(initial.handle);
+    setClaimError('');
+    setLoading(true);
+    void (async () => {
+      try {
+        let current = await findMyGhostProfile();
+        if (!current && validNewGhostHandle(initial.handle)) {
+          // A handle chosen on /join is only claimed after email confirmation.
+          current = await claimGhostProfile(user, initial.handle, initial);
+        }
+        if (!active) return;
+        setProfile(current);
+      } catch (e) {
+        if (!active) return;
+        setClaimError(e instanceof Error ? e.message : 'Could not create your Ghost profile.');
+      } finally { if (active) setLoading(false); }
+    })();
+    return () => { active = false; };
+  }, [user?.id,user?.email_confirmed_at,accountState]);
+
+
+  async function claim(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!user || busy) return;
+    const handle = newHandle.trim();
+    if (!validNewGhostHandle(handle)) { setClaimError('Handles need 3–40 characters starting with a letter/digit. Use . _ - ! @ # $ & + ~ or //; single slashes and /// are invalid.'); return; }
+    setBusy(true);
+    setClaimError('');
+    try {
+      const current = await claimGhostProfile(user, handle, signupDetails(user));
+      setProfile(current);
+      setNotice('Your Ghost identity is active.');
+    } catch (e) {
+      setClaimError(e instanceof Error ? e.message : 'Could not claim handle.');
+    } finally { setBusy(false); }
+  }
+
+
+  async function signOut() {
+    await supabaseBrowser().auth.signOut();
+    navigate('/login', { replace: true });
+  }
+
+  if (isLoading || (user?.email_confirmed_at&&accountState==='checking')) return <main className="rail loading-state" style={{ padding: '60px 0' }}>Loading Ghost Space…</main>;
+  if (!user?.email_confirmed_at) return <main className="login-wrap form-panel">
+    <p>{sessionError || 'Email confirmation is required before entering Ghost Space.'}</p>
+    <Link to="/login" className="button button-light">Sign in</Link>
+  </main>;
+
+  if(accountState==='mfa_required')return <SupabaseMfaChallenge
+    onVerified={()=>setAccountRevision(value=>value+1)} onSignOut={()=>void signOut()} />;
+  if(accountState!=='active')return <main className="login-wrap form-panel">
+    <p role="alert">{accountState==='deactivated'?'This Ghost account is deactivated.':'Account verification is unavailable. Refresh and try again.'}</p>
+    <button type="button" className="button button-outline" onClick={()=>void signOut()}>Sign out</button>
+  </main>;
+  if(loading)return <main className="rail loading-state">Loading Ghost Space…</main>;
+
+  return (
+    <GhostSpaceLayout section={section} canReview={canReview} handle={profile?.handle || 'New Ghost'}
+      publicProfilePath={profile ? ghostProfilePath(profile.handle) : ""} onSignOut={() => { void signOut(); }}>
+      {notice && <p role="status" className="status-message">{notice}</p>}
+      {error && <p role="alert" className="status-message error-message">{error}</p>}
+      {!profile ? (
+        <div className="gs-placeholder">
+          <span className="eyebrow"><span className="tiny-dot"/> COMPLETE YOUR GHOST IDENTITY</span>
+          <h1>Claim your handle.</h1>
+          <p>Your email is verified. Choose your permanent public handle. If the name you selected was taken (including a different capitalization), choose another. The exact capitalization you claim will be preserved.</p>
+          <form className="form-panel" onSubmit={claim}>
+            <div className="field"><label htmlFor="new-handle">Permanent Ghost handle</label>
+              <input id="new-handle" required minLength={3} maxLength={40} pattern="[A-Za-z0-9](?!.*///)(?:[A-Za-z0-9._!@#$&+~\-]|//){1,39}"
+                value={newHandle} onChange={e => setNewHandle(e.target.value)} /></div>
+            <button disabled={busy} className="button button-light">{busy ? 'Claiming…' : 'Claim Ghost handle'}</button>
+            {claimError && <p role="alert" className="status-message error-message">{claimError}</p>}
+          </form>
+        </div>
+      ) : section === 'dashboard' ? (
+        <SupabaseDashboardHome key={profile.id} profileId={profile.id} handle={profile.handle} displayName={profile.display_name} />
+      ) : section === 'profile' ? (
+        <SupabaseProfileEditor profile={profile} onSaved={(updated) => {
+          setProfile(updated);
+          setNotice('Profile updated successfully.');
+          setError('');
+        }} />
+      ) : section === 'contributions' ? (
+        <SupabaseContributions profile={profile} userId={user.id} />
+      ) : section === 'projects' ? (
+        <SupabaseProjects profileId={profile.id} />
+      ) : section === 'table-talks' ? (
+        <SupabaseTableTalks profileId={profile.id} />
+      ) : section === 'network' ? (
+        <SupabaseNetwork profileId={profile.id} />
+      ) : section === 'messages' ? (
+        <SupabaseMessages key={profile.id} profileId={profile.id} />
+      ) : section === 'notifications' ? (
+        <SupabaseNotifications profileId={profile.id} />
+      ) : section === 'review' ? (
+        <SupabaseReviewQueue profile={profile} />
+      ) : section === 'settings' ? (
+        <SupabaseSettings key={user.id} userId={user.id} email={user.email??''} handle={profile.handle}
+          onDeactivated={()=>{setVerifiedAccount({userId:user.id,state:'deactivated'});void signOut();}} />
+      ) : null}
+    </GhostSpaceLayout>
+  );
+}

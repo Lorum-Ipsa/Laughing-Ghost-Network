@@ -1,0 +1,21 @@
+{
+  "name": "monorepo-ssr",
+  "type": "module",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "setup": "bun install",
+    "dev": "npm run dev --workspace web",
+    "build": "npm run build --workspace web",
+    "start": "npm run start --workspace web",
+    "lint": "npm run lint --workspace web",
+    "typecheck": "npm run typecheck --workspace web",
+    "check:source": "node scripts/check-app-source.mjs"
+  },
+  "devDependencies": {
+    "knip": "^6.32.1"
+  },
+  "workspaces": [
+    "apps/*"
+  ]
+}

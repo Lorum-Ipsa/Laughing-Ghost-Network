@@ -36,3 +36,6 @@ horizons-export-*.zip
 Thumbs.db
 .idea/
 .vscode/
+
+# Local disposable preview databases, executables and encrypted state
+.local/
