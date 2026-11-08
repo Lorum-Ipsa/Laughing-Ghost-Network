@@ -35,7 +35,13 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned Bun from npm
+        run: |
+          npm install --prefix "$RUNNER_TEMP/lgn-tools" --no-save bun@1.4.4
+          echo "$RUNNER_TEMP/lgn-tools/node_modules/.bin" >> "$GITHUB_PATH"
       - name: Install frozen dependency lockfile
         run: bun install --frozen-lockfile
       - name: Validate Ghost handle syntax and slash-safe routing
