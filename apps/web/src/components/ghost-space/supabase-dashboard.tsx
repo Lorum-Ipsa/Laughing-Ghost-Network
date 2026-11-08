@@ -6,6 +6,7 @@ import { useSupabaseAuth } from '@/hooks/use-supabase-auth';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { SupabaseProfileEditor } from '@/components/ghost-space/profile/supabase-profile-editor';
 import { SupabaseContributions } from '@/components/ghost-space/contributions/supabase-contributions';
+import { SupabaseProjects } from '@/components/ghost-space/projects/supabase-projects';
 import { SupabaseReviewQueue } from '@/components/ghost-space/review/supabase-review-queue';
 import { ghostProfilePath, validNewGhostHandle } from '@/lib/ghost-handle';
 import {
@@ -19,7 +20,7 @@ const sections: GhostSpaceSection[] = [
   'network', 'notifications', 'settings',
 ];
 const pendingTitles: Record<string, string> = {
-  projects: 'Projects', 'table-talks': 'Table Talks',
+  'table-talks': 'Table Talks',
   network: 'Network', notifications: 'Notifications',
 };
 
@@ -133,7 +134,7 @@ export function SupabaseGhostSpaceDashboard() {
               </div>
               <div className="form-panel"><h2>What's available now</h2>
                 <p>Registration, email confirmation, the complete Ghost profile editor, and contribution drafting/revision history are connected to Supabase.</p>
-                <p className="muted-note">Contributions support private drafts, direct publication, and deletion. A screening concern sends work to the Review queue. Projects, Table Talks, notifications, custom avatar uploads and advanced settings remain in development.</p>
+                <p className="muted-note">Contributions support private drafts, direct publication, and deletion. A screening concern sends work to the Review queue. Projects supports briefs, membership requests, and tasks. Table Talks, notifications, custom avatar uploads and advanced settings remain in development.</p>
               </div>
             </div>
             <div className="gs-grid-side">
@@ -153,6 +154,8 @@ export function SupabaseGhostSpaceDashboard() {
         }} />
       ) : section === 'contributions' ? (
         <SupabaseContributions profile={profile} userId={user.id} />
+      ) : section === 'projects' ? (
+        <SupabaseProjects profileId={profile.id} />
       ) : section === 'review' ? (
         <SupabaseReviewQueue profile={profile} />
       ) : section === 'settings' ? (

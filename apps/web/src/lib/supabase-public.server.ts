@@ -161,3 +161,15 @@ export async function publicSupabaseTextAttachment(workId:string,id:string) {
   if(error)throw error;
   return data;
 }
+
+export async function publicSupabaseProjects() {
+  const api=publicApi();
+  if(!api)return [];
+  const {data,error}=await api.from('ghost_projects')
+    .select('id,title,summary,status,recruiting')
+    .eq('visibility','public').neq('status','archived')
+    .order('created_at',{ascending:false}).limit(100);
+  if(error?.code==='PGRST205')return [];
+  if(error)throw error;
+  return data;
+}

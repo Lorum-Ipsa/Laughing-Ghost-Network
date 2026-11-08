@@ -17,7 +17,7 @@ Historical PocketBase content has not been imported. Research and Arsenal read S
 
 ## 4. Supabase cutover and remaining Ghost Space sections
 
-**Projects follows Contributions.** Migrate project records, ownership, membership, tasks, updates and participation to Supabase with role-based access. Cut over the dashboard and public Projects surfaces together. Then migrate Table Talks, collaboration, notifications, account settings and export, and the remaining admin and moderation workflows. Audit server loaders and browser clients for residual PocketBase access before removing the PocketBase preview service and dependency. Reconcile authorized historical records and URL mappings before retiring legacy readers.
+**Projects first slice is in the draft.** See [Projects acceptance](supabase/projects-acceptance.md) for the pending rollout and browser checks. Legacy import and collaboration parity remain in progress. Migrate project records, ownership, membership, tasks, updates and participation to Supabase with role-based access. Cut over the dashboard and public Projects surfaces together. Then migrate Table Talks, collaboration, notifications, account settings and export, and the remaining admin and moderation workflows. Audit server loaders and browser clients for residual PocketBase access before removing the PocketBase preview service and dependency. Reconcile authorized historical records and URL mappings before retiring legacy readers.
 
 ## 5. Staging, operational security and continuity
 Resolve Supabase CLI migration baseline; add disposable end-to-end tests, hardened cookie/PKCE SSR sessions, reliable deployed staging and rollback, two-user permissions, rate limits, privacy notices and observed moderation behavior.

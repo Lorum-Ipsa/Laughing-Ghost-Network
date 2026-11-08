@@ -420,6 +420,111 @@ export type Database = {
         }
         Relationships: []
       }
+      ghost_projects: {
+        Row: {
+          id: string
+          profile_id: string
+          title: string
+          summary: string
+          visibility: string
+          status: string
+          recruiting: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          profile_id: string
+          title: string
+          summary?: string
+          visibility?: string
+          status?: string
+          recruiting?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          profile_id?: string
+          title?: string
+          summary?: string
+          visibility?: string
+          status?: string
+          recruiting?: boolean
+          created_at?: string
+        }
+        Relationships: [{
+          foreignKeyName: "ghost_projects_profile_id_fkey"
+          columns: ["profile_id"]
+          isOneToOne: false
+          referencedRelation: "ghost_profiles"
+          referencedColumns: ["id"]
+        }]
+      }
+      ghost_project_members: {
+        Row: {
+          project_id: string
+          profile_id: string
+          status: string
+          created_at: string
+        }
+        Insert: {
+          project_id: string
+          profile_id: string
+          status?: string
+          created_at?: string
+        }
+        Update: {
+          project_id?: string
+          profile_id?: string
+          status?: string
+          created_at?: string
+        }
+        Relationships: [{
+          foreignKeyName: "ghost_project_members_project_id_fkey"
+          columns: ["project_id"]
+          isOneToOne: false
+          referencedRelation: "ghost_projects"
+          referencedColumns: ["id"]
+        }, {
+          foreignKeyName: "ghost_project_members_profile_id_fkey"
+          columns: ["profile_id"]
+          isOneToOne: false
+          referencedRelation: "ghost_profiles"
+          referencedColumns: ["id"]
+        }]
+      }
+      ghost_project_tasks: {
+        Row: {
+          id: string
+          project_id: string
+          title: string
+          description: string
+          status: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          title: string
+          description?: string
+          status?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          title?: string
+          description?: string
+          status?: string
+          created_at?: string
+        }
+        Relationships: [{
+          foreignKeyName: "ghost_project_tasks_project_id_fkey"
+          columns: ["project_id"]
+          isOneToOne: false
+          referencedRelation: "ghost_projects"
+          referencedColumns: ["id"]
+        }]
+      }
       ghost_profiles: {
         Row: {
           available_for_work: boolean
