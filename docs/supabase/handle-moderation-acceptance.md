@@ -8,34 +8,32 @@ Uniqueness is case-insensitive: `Ghost!One` and `ghost!one` cannot both be claim
 
 To test the UI, register a **separate** test account using an address you control and a handle such as `Laughing//Ghost`. Verify the email, open Ghost Space, the public Ghost profile, and Search the Network. Check capitalization. A duplicate handle in a different case must be rejected at claim time.
 
-## Automated screening and moderator decisions
+## Browser acceptance for direct publication and review
 
-A rules bot now checks every submitted version immediately. It marks ordinary contributions for human review, exact duplicate content as a **proposed rejection**, and potentially sensitive material as **further investigation**. The bot records the rule and reason, but cannot independently reject or publish. A reviewer must record clearance before flagged work can be published. The [rules and escalation policy](automated-moderation-policy.md) describes each condition.
+Use a private Codespaces preview and the dedicated `lgn-development` project. This checklist requires both pending SQL changes in the order listed in the [publication policy](automated-moderation-policy.md). Confirm the preview points to development before submitting. Use two isolated browser sessions and synthetic content. Published fixtures are publicly readable through the development API.
 
-## Reviewer permissions and decisions
+| Session | Account |
+| --- | --- |
+| A | Verified, active member with a Ghost profile and no reviewer role |
+| B | Separately verified member with a Ghost profile and an explicitly authorized reviewer role |
+| Signed out | Visitor with no member session |
 
-LGN now provides a role-restricted **Review queue** within Ghost Space. Reviewers can read submitted (not draft) work, request a revision with feedback, reject with feedback, or approve and publish. Authors can view their review notes and resubmit. Approved work is publicly visible on the author's profile and at `/work/:id`.
+1. As A, open **Ghost Space → Contributions**. Save a draft, then click **Publish contribution**. Confirm it moves straight to **Published** with a success message. As a signed-out visitor, open the public work URL.
+2. As A, publish a second contribution in the malware sample category. Use harmless markup-like source such as `<span data-lgn-qa>literal source</span>`. On the signed-out article, confirm the source displays literally and the browser inspector shows no element with the `data-lgn-qa` attribute.
+3. As A, submit a new contribution containing `-----BEGIN PRIVATE KEY-----` followed by `synthetic QA fixture`. Confirm it appears under **In Review**, shows the possible credential or private-key concern, and is unavailable to the signed-out visitor.
+4. Try opening **Ghost Space → Review** as A. Confirm access is denied. Open it as B, check the R301 finding, and verify that **Approve & publish** is unavailable before clearance.
+5. As B, request revision with a reason. As A, confirm the reason appears, remove the synthetic marker, and resubmit. Confirm the corrected version publishes immediately and the visitor sees the revised work.
+6. Repeat the held submission with a new fixture. As B, record a clearance reason and confirm it stays private. Then make a separate publish decision and confirm the work becomes visible to the visitor.
+7. As B, submit a synthetic held fixture of your own. Confirm it is visible in the queue and the UI offers no action to review your own submission.
 
-Review access is checked against `lgn_private.member_access`, where reviewer, moderator and admin are the only eligible roles, and suspension and email-confirmation are enforced. Users **cannot self-assign a role**, and **cannot review their own work**. All review decisions are version-checked and stored in `ghost_contribution_reviews`.
+Do not grant reviewer access to a real account for testing. Provision and revoke a dedicated test account's role only with explicit maintainer authorization.
 
-**No real account has been assigned a reviewer role yet.** A separate test account must receive that role through an explicitly approved privileged administrative action before full browser acceptance. Do not automatically promote the first registered user.
+## Database regression suites
 
-### End-to-end review test
-
-1. Member A submits a harmless test contribution.
-2. Separately verified member B, assigned the reviewer role by an authorized operator, signs in and sees the Review queue. Member A cannot access it.
-3. B opens A's submission, reads the bot's rule-specific findings and requests revision, providing a note. For flagged work, B must investigate and record a clearance before approval.
-4. A sees the feedback under **Contributions → Needs Revision**, edits the work, and resubmits.
-5. B approves the revised version. A signed-out visitor should now see the work on A's public profile and its article page.
-6. Repeat a rejection with feedback. Attempt self-review, stale-version review and suspended-reviewer actions; each must be denied.
-
-Use only fictional, authorized test content: approval makes content public. Existing member records were not altered by backend testing. Production still needs browser-level multi-account acceptance, hardening and staging.
-
-## Regression evidence
-
-- [9 handle validation checks](handle-validation-rls-acceptance.sql) — passed, rollback only.
-- [13 rules-bot escalation and authorization checks](rules-bot-triage-acceptance.sql).
-- [18 reviewer and publication checks](reviewer-workflow-rls-acceptance.sql) — passed, rollback only.
-- [14 existing contribution checks](contributions-rls-acceptance.sql) — still passed after the changes.
+- [Direct publication and targeted screening](targeted-publication-acceptance.sql)
+- [Reviewer and publication authorization](reviewer-workflow-rls-acceptance.sql)
+- [Contribution authorization and privacy](contributions-rls-acceptance.sql)
+- [Handle validation](handle-validation-rls-acceptance.sql)
+- [Historical v1 screening](rules-bot-triage-acceptance.sql), run before the new publication SQL.
 
 The callable reviewer RPC is intentionally `SECURITY DEFINER` with strong server-side role, identity, owner, version and action checks. Supabase appropriately flags elevated callable functions for review; do not broaden its privileges without an independent security assessment. [Security advisory details](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable).
