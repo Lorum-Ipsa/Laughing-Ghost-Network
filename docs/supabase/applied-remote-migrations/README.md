@@ -13,5 +13,8 @@ The remaining applied versions are recorded here:
 | `20261107225449` | Correct contribution insert policy to use the owner-scoped profile link without exposing `owner_id` |
 | `20261107230314` | Add profile contribution lookup index |
 | `20261108073825` | Allow concise contributions: title plus any actual content without arbitrary minimum length |
+| `20261108074923` | Preserve uppercase and safe punctuation in new Ghost handles; case-insensitive permanent reservation |
+| `20261108075127` | Add private reviewer authorization, queue access, review decisions, audit records and restricted publication RPC |
+| `20261108080058` | Consolidate review queue RLS access and index reviewer foreign keys |
 
 **Do not replay** these directly on `lgn-development`. Resolve a reviewed Supabase CLI baseline before using them in a fresh staging environment. Future migrations should be generated and tested with the version of the CLI actually installed, with authorization and rollback tests.
