@@ -21,6 +21,7 @@ export type NotificationType =
 	| 'welcome'
 	| 'system_notice'
 	| 'work_published'
+	| 'followed_work_published'
 	| 'work_rejected'
 	| 'work_revision_requested'
 	| 'work_archived'
@@ -58,6 +59,7 @@ export const TYPE_CATEGORY: Record<NotificationType, NotificationCategory> = {
 	welcome: 'system',
 	system_notice: 'system',
 	work_published: 'contributions',
+	followed_work_published: 'contributions',
 	work_rejected: 'contributions',
 	work_revision_requested: 'contributions',
 	work_archived: 'contributions',
@@ -84,6 +86,7 @@ export const TYPE_LABELS: Record<NotificationType, string> = {
 	welcome: 'Welcome',
 	system_notice: 'System Notice',
 	work_published: 'Contribution Published',
+	followed_work_published: 'New Work From a Followed Ghost',
 	work_rejected: 'Contribution Not Published',
 	work_revision_requested: 'Revision Requested',
 	work_archived: 'Contribution Archived',

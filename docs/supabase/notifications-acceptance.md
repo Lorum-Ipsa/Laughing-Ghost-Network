@@ -12,3 +12,7 @@ The Supabase inbox covers contribution review outcomes, project invitations and 
 - [ ] Reconcile any approved historical PocketBase notifications before retiring their source. Obtain final approval before merge or production deployment.
 
 This slice is in-app only. Email, push delivery, live updates and security-alert policy are separate work. Notifications refresh when opening the inbox or selecting Refresh.
+
+## Followed publications
+
+- [ ] Enable **New work from Ghosts I follow**, then have a followed Ghost publish a synthetic contribution. Confirm one notice links to the article. Verify drafts, later edits, and new work after unfollowing do not generate notices. This preference is off by default and is independent of review notices.

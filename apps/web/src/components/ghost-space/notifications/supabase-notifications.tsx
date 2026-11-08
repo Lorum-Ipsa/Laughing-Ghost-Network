@@ -9,8 +9,9 @@ type Tables=Database['public']['Tables'];
 type Notice=Tables['ghost_notifications']['Row'];
 type Preferences=Omit<Tables['ghost_notification_preferences']['Row'],'profile_id'>;
 const categories=['contributions','projects','table_talks','collaboration'] as const;
-const defaults:Preferences={contributions:true,projects:true,table_talks:true,collaboration:true};
+const defaults:Preferences={contributions:true,projects:true,table_talks:true,collaboration:true,following:false};
 type Tab='inbox'|'unread'|'archived'|typeof categories[number];
+const preferenceKeys=[...categories,'following'] as const;
 const tabs:Tab[]=['inbox','unread',...categories,'archived'];
 const pageSize=50;
 
@@ -41,7 +42,7 @@ export function SupabaseNotifications({profileId}:{profileId:string}) {
           query.order('created_at',{ascending:false}).order('id').range(page*pageSize,page*pageSize+pageSize),
           api.from('ghost_notifications').select('id',{count:'exact',head:true})
             .eq('profile_id',profileId).eq('read',false).eq('archived',false),
-          api.from('ghost_notification_preferences').select('contributions,projects,table_talks,collaboration')
+          api.from('ghost_notification_preferences').select('contributions,projects,table_talks,collaboration,following')
             .eq('profile_id',profileId).maybeSingle(),
         ]);
         if(inbox.error)throw inbox.error;
@@ -100,7 +101,7 @@ export function SupabaseNotifications({profileId}:{profileId:string}) {
         const category=item.category as NotificationCategory;
         return <NotificationItem key={item.id} notification={{
           id:item.id,type,category,title:item.title,body:item.body,
-          link:item.link.startsWith('/ghost-space?')?item.link:'',
+          link:item.link.startsWith('/ghost-space?')||/^\/work\/[a-f0-9-]{36}$/i.test(item.link)?item.link:'',
           read:item.read,archived:item.archived,related_work:'',created:item.created_at,updated:item.created_at,
         }} onToggleRead={()=>patch(item.id,{read:!item.read})}
           onArchive={()=>patch(item.id,{archived:true})} onUnarchive={()=>patch(item.id,{archived:false})}/>;
@@ -111,8 +112,8 @@ export function SupabaseNotifications({profileId}:{profileId:string}) {
     <fieldset className="dashboard-panel" disabled={loading||busy}>
       <legend>In-app preferences</legend>
       <p>Changes apply to future notices in each category.</p>
-      {categories.map(category=><label key={category} style={{display:'block'}}>
-        <input type="checkbox" checked={prefs[category]} onChange={()=>toggle(category)}/> {CATEGORY_LABELS[category]}
+      {preferenceKeys.map(category=><label key={category} style={{display:'block'}}>
+        <input type="checkbox" checked={prefs[category]} onChange={()=>toggle(category)}/> {category==='following'?'New work from Ghosts I follow':CATEGORY_LABELS[category]}
       </label>)}
     </fieldset>
   </section>;

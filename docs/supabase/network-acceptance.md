@@ -14,3 +14,9 @@ Collaboration requests are visible only to the active sending and receiving Ghos
 - [ ] Accept as B and confirm both Ghosts see the connection after signing out and back in. Check that a repeat request is blocked. Disconnect as A and verify B no longer sees the connection, both retain the request history, and a new request can be sent. Also check decline and withdrawal.
 - [ ] Open a recruiting Project and a scheduled Table Talk from Network. Confirm private opportunities are absent.
 - [ ] Reconcile historical PocketBase requests and searches from an approved export before removing the old paths. Obtain final approval before merge or production deployment.
+
+## Private follows
+
+- [x] Apply [the follow migration](network-follows.sql) to `lgn-development` as `20261108104403_phase1_network_follows`. All 10 [database assertions](network-follows-acceptance.sql) passed before and after rollout.
+- [ ] Follow a Ghost from Network, then sign out and back in. Verify the Following list persists and the other Ghost does not see it or get a follow alert.
+- [ ] Unfollow and verify any mutual connection remains unchanged.

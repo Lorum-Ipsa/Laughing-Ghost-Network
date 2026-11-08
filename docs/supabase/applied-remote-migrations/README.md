@@ -37,3 +37,5 @@ Network was installed on development as `20261108102108_phase1_network_workspace
 Persistent Network connections were installed on development as `20261108102705_phase1_persistent_network_connections` from [the connection SQL](../network-persistent-connections.sql). The expanded 14-check Network suite passed against the installed schema.
 
 Notifications was installed on development as `20261108103356_phase1_notifications_workspace` from [the workspace SQL](../notifications-workspace.sql). All 11 rollback-only checks passed against the installed schema.
+
+Private follows were installed on development as `20261108104403_phase1_network_follows` from [the follow SQL](../network-follows.sql). The 10 follow checks and 25 existing Network and Notifications assertions passed against the installed schema.

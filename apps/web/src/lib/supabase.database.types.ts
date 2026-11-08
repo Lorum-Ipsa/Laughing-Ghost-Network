@@ -934,6 +934,7 @@ export type Database = {
           projects: boolean
           table_talks: boolean
           collaboration: boolean
+          following: boolean
         }
         Insert: {
           profile_id: string
@@ -941,6 +942,7 @@ export type Database = {
           projects?: boolean
           table_talks?: boolean
           collaboration?: boolean
+          following?: boolean
         }
         Update: {
           profile_id?: string
@@ -948,11 +950,30 @@ export type Database = {
           projects?: boolean
           table_talks?: boolean
           collaboration?: boolean
+          following?: boolean
         }
         Relationships: [{
           foreignKeyName: "ghost_notification_preferences_profile_id_fkey"
           columns: ["profile_id"]
           isOneToOne: true
+          referencedRelation: "ghost_profiles"
+          referencedColumns: ["id"]
+        }]
+      }
+      ghost_follows: {
+        Row: { follower_profile_id: string; followed_profile_id: string; created_at: string }
+        Insert: { follower_profile_id: string; followed_profile_id: string; created_at?: string }
+        Update: { follower_profile_id?: string; followed_profile_id?: string; created_at?: string }
+        Relationships: [{
+          foreignKeyName: "ghost_follows_follower_profile_id_fkey"
+          columns: ["follower_profile_id"]
+          isOneToOne: false
+          referencedRelation: "ghost_profiles"
+          referencedColumns: ["id"]
+        }, {
+          foreignKeyName: "ghost_follows_followed_profile_id_fkey"
+          columns: ["followed_profile_id"]
+          isOneToOne: false
           referencedRelation: "ghost_profiles"
           referencedColumns: ["id"]
         }]
