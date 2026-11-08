@@ -53,6 +53,56 @@ select set_config('request.jwt.claim.sub',(select id::text from qa_project_users
 insert into qa_project_results select 'unrelated member cannot read memberships or tasks',
   (select count(*)=0 from public.ghost_project_members)
   and (select count(*)=0 from public.ghost_project_tasks where title='QA private task');
+select set_config('request.jwt.claim.sub',(select id::text from qa_project_users where k='owner'),true);
+update public.ghost_project_tasks set assigned_profile_id=(
+  select id from public.ghost_profiles where handle='ProjectQAMember'
+) where title='QA private task';
+insert into public.ghost_project_updates(project_id,title,body)
+select id,'QA progress update','Synthetic milestone progress'
+from public.ghost_projects where title='QA project';
+set local role anon;
+insert into qa_project_results values('visitors have no project update access',
+  not has_table_privilege('anon','public.ghost_project_updates','SELECT'));
+set local role authenticated;
+select set_config('request.jwt.claim.sub',(select id::text from qa_project_users where k='member'),true);
+insert into qa_project_results select 'accepted member reads progress updates',count(*)=1
+from public.ghost_project_updates where title='QA progress update';
+select public.update_assigned_project_task_status(
+  (select id from public.ghost_project_tasks where title='QA private task'),'open','in_progress');
+insert into qa_project_results select 'assignee changes their task status',count(*)=1
+from public.ghost_project_tasks where title='QA private task' and status='in_progress';
+do $qa$
+begin
+  perform public.update_assigned_project_task_status(
+    (select id from public.ghost_project_tasks where title='QA private task'),'open','complete');
+  raise sqlstate 'LGN01';
+exception
+  when insufficient_privilege then
+    insert into qa_project_results values ('stale task status cannot overwrite current status',true);
+  when sqlstate 'LGN01' then
+    insert into qa_project_results values ('stale task status cannot overwrite current status',false);
+end $qa$;
+do $qa$
+begin
+  insert into public.ghost_project_updates(project_id,title,body)
+    select id,'Unauthorized update','Synthetic write attempt'
+    from public.ghost_projects where title='QA project';
+  raise sqlstate 'LGN01';
+exception
+  when insufficient_privilege then
+    insert into qa_project_results values ('accepted member cannot post maintainer updates',true);
+  when sqlstate 'LGN01' then
+    insert into qa_project_results values ('accepted member cannot post maintainer updates',false);
+end $qa$;
+select set_config('request.jwt.claim.sub',(select id::text from qa_project_users where k='owner'),true);
+delete from public.ghost_project_members
+where project_id=(select id from public.ghost_projects where title='QA project');
+insert into qa_project_results select 'removing a member clears their task assignment',count(*)=1
+from public.ghost_project_tasks where title='QA private task' and assigned_profile_id is null;
+select set_config('request.jwt.claim.sub',(select id::text from qa_project_users where k='member'),true);
+insert into qa_project_results select 'former member loses task and update access',
+  (select count(*)=0 from public.ghost_project_tasks where title='QA private task')
+  and (select count(*)=0 from public.ghost_project_updates where title='QA progress update');
 reset role;
 update lgn_private.member_access set suspended=true where user_id=(select id from qa_project_users where k='owner');
 set local role authenticated;

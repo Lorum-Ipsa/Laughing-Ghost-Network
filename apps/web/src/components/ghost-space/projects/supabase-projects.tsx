@@ -7,6 +7,7 @@ import type { Database } from '@/lib/supabase.database.types';
 
 type Project = Database['public']['Tables']['ghost_projects']['Row'];
 type Member = Database['public']['Tables']['ghost_project_members']['Row'];
+type Update = Database['public']['Tables']['ghost_project_updates']['Row'];
 type Task = Database['public']['Tables']['ghost_project_tasks']['Row'];
 const projectFields='id,profile_id,title,summary,visibility,status,recruiting,created_at' as const;
 const taskStates=['open','in_progress','complete'];
@@ -18,6 +19,7 @@ export function SupabaseProjects({profileId}:{profileId:string}) {
   const [project,setProject]=useState<Project|null>(null);
   const [members,setMembers]=useState<Member[]>([]);
   const [tasks,setTasks]=useState<Task[]>([]);
+  const [updates,setUpdates]=useState<Update[]>([]);
   const [handles,setHandles]=useState<Record<string,string>>({});
   const [loading,setLoading]=useState(true);
   const [busy,setBusy]=useState(false);
@@ -46,14 +48,18 @@ export function SupabaseProjects({profileId}:{profileId:string}) {
         const current=data.find(row=>row.id===selectedId)??null;
         const memberRows:Member[]=[];
         const taskRows:Task[]=[];
+        const updateRows:Update[]=[];
         const names:Record<string,string>={};
         if(current){
-          const [memberResult,taskResult]=await Promise.all([
+          const [memberResult,taskResult,updateResult]=await Promise.all([
             api.from('ghost_project_members').select('*').eq('project_id',current.id),
             api.from('ghost_project_tasks').select('*').eq('project_id',current.id).order('created_at'),
+            api.from('ghost_project_updates').select('*').eq('project_id',current.id).order('created_at',{ascending:false}),
           ]);
           if(memberResult.error)throw memberResult.error;
           if(taskResult.error)throw taskResult.error;
+          if(updateResult.error)throw updateResult.error;
+          updateRows.push(...updateResult.data);
           memberRows.push(...memberResult.data);
           taskRows.push(...taskResult.data);
           if(memberRows.length){
@@ -63,10 +69,10 @@ export function SupabaseProjects({profileId}:{profileId:string}) {
             for(const row of profiles)names[row.id]=row.handle;
           }
         }
-        if(active){setProjects(data);setProject(current);setMembers(memberRows);setTasks(taskRows);setHandles(names);}
+        if(active){setProjects(data);setProject(current);setMembers(memberRows);setTasks(taskRows);setUpdates(updateRows);setHandles(names);}
       } catch(e) {
         if(active){
-          setProjects([]);setProject(null);setMembers([]);setTasks([]);
+          setProjects([]);setProject(null);setMembers([]);setTasks([]);setUpdates([]);
           setError(typeof e==='object'&&e!==null&&'code' in e&&e.code==='PGRST205'
             ?'The Projects migration has not been applied in this environment.'
             : 'Unable to load Projects. Refresh and try again.');
@@ -124,6 +130,31 @@ export function SupabaseProjects({profileId}:{profileId:string}) {
       if(!result.error)element.reset();
       return result;
     },'Task added.');
+  }
+
+  function postUpdate(event:FormEvent<HTMLFormElement>,projectId:string) {
+    event.preventDefault();
+    const element=event.currentTarget;
+    const form=new FormData(element);
+    void mutate(async()=>{
+      const result=await supabaseBrowser().from('ghost_project_updates').insert({
+        project_id:projectId,title:String(form.get('title')??'').trim(),
+        body:String(form.get('body')??'').trim(),
+      });
+      if(!result.error)element.reset();
+      return result;
+    },'Progress update posted.');
+  }
+
+  function changeTaskStatus(task:Task,status:string) {
+    if(owning){
+      void mutate(()=>supabaseBrowser().from('ghost_project_tasks').update({status})
+        .eq('id',task.id).eq('status',task.status).select('id').single(),'Task updated.');
+    } else {
+      void mutate(()=>supabaseBrowser().rpc('update_assigned_project_task_status',{
+        p_task_id:task.id,p_expected_status:task.status,p_status:status,
+      }),'Task updated.');
+    }
   }
 
   return <section className="gs-contributions">
@@ -196,11 +227,36 @@ export function SupabaseProjects({profileId}:{profileId:string}) {
           {tasks.length===0&&<p>No tasks yet.</p>}
           <ul>{tasks.map(task=><li key={task.id}>
             <strong>{task.title}</strong><p>{task.description}</p>
-            {owning?<select aria-label={`Status for ${task.title}`} value={task.status} disabled={busy}
-              onChange={event=>{const status=event.target.value;void mutate(()=>supabaseBrowser()
-                .from('ghost_project_tasks').update({status}).eq('id',task.id).select('id').single(),'Task updated.');}}>
+            {(owning||task.assigned_profile_id===profileId)?<select aria-label={`Status for ${task.title}`}
+              value={task.status} disabled={busy} onChange={event=>changeTaskStatus(task,event.target.value)}>
               {taskStates.map(state=><option key={state} value={state}>{state.replace('_',' ')}</option>)}
             </select>:<p>{task.status.replace('_',' ')}</p>}
+            {owning&&<select aria-label={`Assignee for ${task.title}`} value={task.assigned_profile_id??''}
+              disabled={busy} onChange={event=>{
+                const assigned_profile_id=event.target.value||null;
+                void mutate(()=>supabaseBrowser().from('ghost_project_tasks').update({assigned_profile_id})
+                  .eq('id',task.id).select('id').single(),'Assignment updated.');
+              }}>
+              <option value="">Unassigned</option>
+              {members.filter(member=>member.status==='accepted').map(member=>
+                <option key={member.profile_id} value={member.profile_id}>{handles[member.profile_id]??'Ghost'}</option>)}
+            </select>}
+            {!owning&&task.assigned_profile_id===profileId&&<p>Assigned to you</p>}
+          </li>)}</ul>
+        </div>}
+        {(owning||myMembership?.status==='accepted')&&<div><h3>Progress updates</h3>
+          {owning&&<form onSubmit={event=>postUpdate(event,project.id)}>
+            <label htmlFor="project-update-title">Update title</label>
+            <input id="project-update-title" name="title" maxLength={180} required/>
+            <label htmlFor="project-update-body">Progress update</label>
+            <textarea id="project-update-body" name="body" maxLength={5000} required/>
+            <button className="button button-light" disabled={busy}>Post update</button>
+          </form>}
+          {updates.length===0&&<p>No progress updates yet.</p>}
+          <ul>{updates.map(update=><li key={update.id}>
+            <strong>{update.title}</strong>
+            <p style={{whiteSpace:'pre-wrap'}}>{update.body}</p>
+            <time dateTime={update.created_at}>{new Date(update.created_at).toLocaleDateString()}</time>
           </li>)}</ul>
         </div>}
       </div>}

@@ -496,6 +496,7 @@ export type Database = {
         Row: {
           id: string
           project_id: string
+          assigned_profile_id: string | null
           title: string
           description: string
           status: string
@@ -504,6 +505,7 @@ export type Database = {
         Insert: {
           id?: string
           project_id: string
+          assigned_profile_id?: string | null
           title: string
           description?: string
           status?: string
@@ -512,6 +514,7 @@ export type Database = {
         Update: {
           id?: string
           project_id?: string
+          assigned_profile_id?: string | null
           title?: string
           description?: string
           status?: string
@@ -519,6 +522,24 @@ export type Database = {
         }
         Relationships: [{
           foreignKeyName: "ghost_project_tasks_project_id_fkey"
+          columns: ["project_id"]
+          isOneToOne: false
+          referencedRelation: "ghost_projects"
+          referencedColumns: ["id"]
+        }, {
+          foreignKeyName: "ghost_project_tasks_membership_fkey"
+          columns: ["project_id", "assigned_profile_id"]
+          isOneToOne: false
+          referencedRelation: "ghost_project_members"
+          referencedColumns: ["project_id", "profile_id"]
+        }]
+      }
+      ghost_project_updates: {
+        Row: { id: string; project_id: string; title: string; body: string; created_at: string }
+        Insert: { id?: string; project_id: string; title: string; body: string; created_at?: string }
+        Update: { id?: string; project_id?: string; title?: string; body?: string; created_at?: string }
+        Relationships: [{
+          foreignKeyName: "ghost_project_updates_project_id_fkey"
           columns: ["project_id"]
           isOneToOne: false
           referencedRelation: "ghost_projects"
@@ -626,6 +647,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      update_assigned_project_task_status: {
+        Args: { p_task_id: string; p_expected_status: string; p_status: string }
+        Returns: boolean
+      }
       can_moderate_reports: { Args: never; Returns: boolean }
       can_review_contributions: { Args: never; Returns: boolean }
       delete_ghost_contribution: {
