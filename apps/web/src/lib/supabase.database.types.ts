@@ -1,5 +1,5 @@
-// GENERATED from lgn-development Supabase project on 2026-11-07 after profile/contributions migration.
-// Regenerate after schema changes; do not edit manually.
+// GENERATED from LGN development Supabase project after moderator-review migrations.
+// Regenerate after SQL changes; never add secrets here.
 
 export type Json =
   | string
@@ -17,6 +17,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      ghost_contribution_reviews: {
+        Row: {
+          action: string
+          contribution_id: string
+          created_at: string
+          id: string
+          note: string
+          reviewer_id: string
+          version_reviewed: number
+        }
+        Insert: {
+          action: string
+          contribution_id: string
+          created_at?: string
+          id?: string
+          note?: string
+          reviewer_id: string
+          version_reviewed: number
+        }
+        Update: {
+          action?: string
+          contribution_id?: string
+          created_at?: string
+          id?: string
+          note?: string
+          reviewer_id?: string
+          version_reviewed?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ghost_contribution_reviews_contribution_id_fkey"
+            columns: ["contribution_id"]
+            isOneToOne: false
+            referencedRelation: "ghost_contributions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ghost_contribution_revisions: {
         Row: {
           body: string
@@ -313,7 +351,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      can_review_contributions: { Args: never; Returns: boolean }
+      review_ghost_contribution: {
+        Args: {
+          p_action: string
+          p_contribution_id: string
+          p_expected_version: number
+          p_note?: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
